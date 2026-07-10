@@ -41,7 +41,7 @@ def delete_${toSnakeCase(name)}(db: Session, id: ${primaryKeyTypePython}) -> Opt
     if db_obj:
         <#if softDelete>
         db_obj.is_deleted = True
-        db_obj.deleted_at = datetime.datetime.now(datetime.UTC)
+        db_obj.deleted_at = datetime.datetime.now(datetime.timezone.utc)
         db.add(db_obj)
         <#else>
         db.delete(db_obj)

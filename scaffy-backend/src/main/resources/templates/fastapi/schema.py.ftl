@@ -17,9 +17,9 @@ class ${name}Base(BaseModel):
 <#list attributes as attr>
 <#if !attr.primaryKey>
     <#if attr.type == "Enum">
-    ${toSnakeCase(attr.name)}: Optional[${attr.enumClassName}] = <#if attr.defaultValue??>"${attr.defaultValue}"<#else>None</#if>
+    ${toSnakeCase(attr.name)}: <#if attr.nullable>Optional[${attr.enumClassName}]<#else>${attr.enumClassName}</#if><#if attr.nullable> = <#if attr.defaultValue??>"${attr.defaultValue}"<#else>None</#if><#elseif attr.defaultValue??> = "${attr.defaultValue}"</#if>
     <#else>
-    ${toSnakeCase(attr.name)}: <#if attr.nullable>Optional[${attr.pythonType}]<#else>${attr.pythonType}</#if> = <#if attr.defaultValue??>${attr.defaultValue}<#else>None</#if>
+    ${toSnakeCase(attr.name)}: <#if attr.nullable>Optional[${attr.pythonType}]<#else>${attr.pythonType}</#if><#if attr.nullable> = <#if attr.defaultValue??>${attr.defaultValue}<#else>None</#if><#elseif attr.defaultValue??> = ${attr.defaultValue}</#if>
     </#if>
 </#if>
 </#list>

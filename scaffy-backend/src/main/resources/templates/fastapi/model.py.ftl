@@ -18,8 +18,8 @@ class ${enum.enumClassName}(str, Enum):
 ${rel.joinTableName} = Table(
     "${rel.joinTableName}",
     Base.metadata,
-    Column("${toSnakeCase(name)}_id", ${primaryKeyTypeSql}, ForeignKey("${tableName}.id", ondelete="CASCADE"), primaryKey=True),
-    Column("${toSnakeCase(rel.targetType)}_id", ${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.id", ondelete="CASCADE"), primaryKey=True)
+    Column("${toSnakeCase(name)}_id", ${primaryKeyTypeSql}, ForeignKey("${tableName}.${primaryKeyColumnName}", ondelete="CASCADE"), primaryKey=True),
+    Column("${toSnakeCase(rel.targetType)}_id", ${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.${rel.targetPKColumnName}", ondelete="CASCADE"), primaryKey=True)
 )
 </#if>
 </#list>
@@ -46,11 +46,11 @@ class ${name}(Base):
     # Relationships
 <#list relations as rel>
     <#if rel.relationType == "MANY_TO_ONE">
-    ${toSnakeCase(rel.fieldName)}_id = Column(${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.id"<#if rel.nullable == false>, nullable=False</#if>))
+    ${toSnakeCase(rel.fieldName)}_id = Column(${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.${rel.targetPKColumnName}"<#if rel.nullable == false>, nullable=False</#if>))
     ${toSnakeCase(rel.fieldName)} = relationship("${rel.targetType}"<#if rel.otherFieldName??>, back_populates="${toSnakeCase(rel.otherFieldName)}"</#if>)
     <#elseif rel.relationType == "ONE_TO_ONE">
     <#if rel.owner>
-    ${toSnakeCase(rel.fieldName)}_id = Column(${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.id"<#if rel.nullable == false>, nullable=False</#if>))
+    ${toSnakeCase(rel.fieldName)}_id = Column(${rel.targetIdTypeSql}, ForeignKey("${rel.targetTableName}.${rel.targetPKColumnName}"<#if rel.nullable == false>, nullable=False</#if>))
     ${toSnakeCase(rel.fieldName)} = relationship("${rel.targetType}"<#if rel.otherFieldName??>, back_populates="${toSnakeCase(rel.otherFieldName)}"</#if>)
     <#else>
     ${toSnakeCase(rel.fieldName)} = relationship("${rel.targetType}"<#if rel.otherFieldName??>, back_populates="${toSnakeCase(rel.otherFieldName)}"</#if>, uselist=False)

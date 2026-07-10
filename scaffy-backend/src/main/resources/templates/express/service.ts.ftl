@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 
-<#assign isNumericId = (primaryKeyType == "Long" || primaryKeyType == "Integer" || primaryKeyType == "Int")>
+<#assign isNumericId = (primaryKeyType?lower_case == "long" || primaryKeyType?lower_case == "integer" || primaryKeyType?lower_case == "int")>
 
 <#list enums as enum>
 export enum ${enum.enumClassName} {
@@ -36,7 +36,7 @@ export class ${name}Service {
 
   async findById(id: <#if isNumericId>number<#else>string</#if>) {
     const record = await prisma.${name?uncap_first}.findUnique({
-      where: { id },
+      where: { ${primaryKeyName}: id },
     });
     <#if softDelete>
     if (!record || record.deleted) return null;
@@ -46,7 +46,7 @@ export class ${name}Service {
 
   async update(id: <#if isNumericId>number<#else>string</#if>, data: any) {
     return prisma.${name?uncap_first}.update({
-      where: { id },
+      where: { ${primaryKeyName}: id },
       data,
     });
   }
@@ -54,12 +54,12 @@ export class ${name}Service {
   async delete(id: <#if isNumericId>number<#else>string</#if>) {
     <#if softDelete>
     return prisma.${name?uncap_first}.update({
-      where: { id },
+      where: { ${primaryKeyName}: id },
       data: { deleted: true },
     });
     <#else>
     return prisma.${name?uncap_first}.delete({
-      where: { id },
+      where: { ${primaryKeyName}: id },
     });
     </#if>
   }

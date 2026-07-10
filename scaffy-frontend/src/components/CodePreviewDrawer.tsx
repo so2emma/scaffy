@@ -9,6 +9,46 @@ interface CodePreviewDrawerProps {
 
 export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName }) => {
   const getDiagramSchema = useDiagramStore((state) => state.getDiagramSchema);
+  
+  // Helper for computing target file paths based on framework and active tab
+  const getFilePathForTab = (tab: string): string => {
+    const projNameSnake = projectName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+    const pkgPath = basePackage.replace(/\./g, '/');
+    const entitySnake = entityName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+    const entityUncap = entityName.charAt(0).toLowerCase() + entityName.slice(1);
+
+    if (targetFramework === 'SPRING_BOOT') {
+      if (tab === 'Entity') return `${projNameSnake}/src/main/java/${pkgPath}/entity/${entityName}.java`;
+      if (tab === 'Request DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}RequestDto.java`;
+      if (tab === 'Response DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}ResponseDto.java`;
+      if (tab === 'Mapper') return `${projNameSnake}/src/main/java/${pkgPath}/mapper/${entityName}Mapper.java`;
+      if (tab === 'Repository') return `${projNameSnake}/src/main/java/${pkgPath}/repository/${entityName}Repository.java`;
+      if (tab === 'Service') return `${projNameSnake}/src/main/java/${pkgPath}/service/${entityName}Service.java`;
+      if (tab === 'ServiceImpl') return `${projNameSnake}/src/main/java/${pkgPath}/service/impl/${entityName}ServiceImpl.java`;
+      if (tab === 'Controller') return `${projNameSnake}/src/main/java/${pkgPath}/controller/${entityName}Controller.java`;
+      if (tab === 'Flyway SQL') return `${projNameSnake}/src/main/resources/db/migration/V1__init.sql`;
+      if (tab === 'Unit Test') return `${projNameSnake}/src/test/java/${pkgPath}/service/${entityName}ServiceImplTest.java`;
+      if (tab.startsWith('Enum ')) {
+        const enumClassName = tab.substring(5);
+        return `${projNameSnake}/src/main/java/${pkgPath}/entity/${enumClassName}.java`;
+      }
+    } else if (targetFramework === 'EXPRESS') {
+      if (tab === 'Prisma Schema') return `${projNameSnake}/prisma/schema.prisma`;
+      if (tab === 'Service') return `${projNameSnake}/src/services/${entityUncap}Service.ts`;
+      if (tab === 'Controller') return `${projNameSnake}/src/controllers/${entityUncap}Controller.ts`;
+      if (tab === 'Route') return `${projNameSnake}/src/routes/${entityUncap}Route.ts`;
+      if (tab === 'App Configuration') return `${projNameSnake}/src/app.ts`;
+    } else if (targetFramework === 'FASTAPI') {
+      if (tab === 'Model (SQLAlchemy)') return `${projNameSnake}/app/models/${entitySnake}.py`;
+      if (tab === 'Schema (Pydantic)') return `${projNameSnake}/app/schemas/${entitySnake}.py`;
+      if (tab === 'CRUD Helpers') return `${projNameSnake}/app/crud/${entitySnake}.py`;
+      if (tab === 'Router') return `${projNameSnake}/app/routers/${entitySnake}.py`;
+      if (tab === 'Main App') return `${projNameSnake}/app/main.py`;
+      if (tab === 'Database Config') return `${projNameSnake}/app/database.py`;
+    }
+
+    return `${projNameSnake}/${tab}`;
+  };
   const theme = useDiagramStore((state) => state.theme);
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
@@ -154,7 +194,37 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
             {isMinimized ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           <Terminal size={14} style={{ color: 'var(--text-secondary)' }} />
-          <span>Code Preview: <strong style={{ color: 'var(--text-primary)' }}>{entityName}</strong></span>
+          <span>
+            Code Preview: <strong style={{ color: 'var(--text-primary)' }}>{entityName}</strong>
+            <span style={{
+              fontSize: '0.65rem',
+              fontWeight: 500,
+              padding: '2px 8px',
+              borderRadius: '4px',
+              marginLeft: '8px',
+              background: 
+                targetFramework === 'SPRING_BOOT' 
+                  ? 'rgba(74, 222, 128, 0.1)' 
+                  : targetFramework === 'EXPRESS' 
+                  ? 'rgba(56, 189, 248, 0.1)' 
+                  : 'rgba(251, 146, 60, 0.1)',
+              color: 
+                targetFramework === 'SPRING_BOOT' 
+                  ? '#4ade80' 
+                  : targetFramework === 'EXPRESS' 
+                  ? '#38bdf8' 
+                  : '#fb923c',
+              border: `1px solid ${
+                targetFramework === 'SPRING_BOOT' 
+                  ? 'rgba(74, 222, 128, 0.2)' 
+                  : targetFramework === 'EXPRESS' 
+                  ? 'rgba(56, 189, 248, 0.2)' 
+                  : 'rgba(251, 146, 60, 0.2)'
+              }`
+            }}>
+              {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express' : 'FastAPI'}
+            </span>
+          </span>
           {isLoading && <RefreshCw size={12} className="animate-spin" style={{ color: 'var(--text-secondary)' }} />}
         </div>
         
@@ -187,41 +257,59 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
             <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Loading scaffold preview...</span>
           </div>
         ) : (
-          <div className="preview-editor-wrapper">
-            <Editor
-              height="100%"
-              language={
-                activeTab === 'Flyway SQL'
-                  ? 'sql'
-                  : targetFramework === 'EXPRESS'
-                  ? 'typescript'
-                  : targetFramework === 'FASTAPI'
-                  ? 'python'
-                  : 'java'
-              }
-              theme={theme === 'dark' ? 'vs-dark' : 'light'}
-              value={activeCode}
-              loading={
-                <div className="preview-loading-overlay">
-                  <RefreshCw size={20} className="animate-spin" />
-                  <span>Loading Editor...</span>
-                </div>
-              }
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                fontSize: 12,
-                fontFamily: "'Courier New', Courier, monospace",
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                automaticLayout: true,
-                padding: { top: 12, bottom: 12 },
-                scrollbar: {
-                  verticalScrollbarSize: 8,
-                  horizontalScrollbarSize: 8
+          <div className="preview-editor-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{
+              background: 'rgba(0,0,0,0.15)',
+              borderBottom: '1px solid var(--glass-border)',
+              padding: '6px 16px',
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              fontFamily: 'monospace',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span style={{ color: 'var(--text-muted)' }}>Target File:</span>
+              <span style={{ color: 'var(--text-primary)' }}>{getFilePathForTab(activeTab)}</span>
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <Editor
+                height="100%"
+                language={
+                  activeTab === 'Flyway SQL'
+                    ? 'sql'
+                    : activeTab === 'Prisma Schema'
+                    ? 'prisma'
+                    : targetFramework === 'EXPRESS'
+                    ? 'typescript'
+                    : targetFramework === 'FASTAPI'
+                    ? 'python'
+                    : 'java'
                 }
-              }}
-            />
+                theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                value={activeCode}
+                loading={
+                  <div className="preview-loading-overlay">
+                    <RefreshCw size={20} className="animate-spin" />
+                    <span>Loading Editor...</span>
+                  </div>
+                }
+                options={{
+                  readOnly: true,
+                  minimap: { enabled: false },
+                  fontSize: 12,
+                  fontFamily: "'Courier New', Courier, monospace",
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  automaticLayout: true,
+                  padding: { top: 12, bottom: 12 },
+                  scrollbar: {
+                    verticalScrollbarSize: 8,
+                    horizontalScrollbarSize: 8
+                  }
+                }}
+              />
+            </div>
           </div>
         )}
       </div>

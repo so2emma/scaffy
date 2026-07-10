@@ -97,49 +97,194 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
         </div>
 
         <div className="sidebar-field">
-          <label className="input-label">Target Framework</label>
-          <select
-            className="text-input"
-            value={targetFramework}
-            onChange={(e) => setTargetFramework(e.target.value)}
-            style={{ width: "100%", cursor: "pointer", appearance: "auto" }}
-          >
-            <option value="SPRING_BOOT">Spring Boot</option>
-            <option value="EXPRESS">Express (Node.js/TS)</option>
-            <option value="FASTAPI">FastAPI (Python)</option>
-          </select>
+          <label className="input-label" style={{ marginBottom: '8px', display: 'block' }}>Target Framework</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {[
+              { id: 'SPRING_BOOT', label: 'Spring Boot', desc: 'Java / Maven / JPA', color: '#4ade80' },
+              { id: 'EXPRESS', label: 'Express TS', desc: 'Node.js / Prisma', color: '#38bdf8' },
+              { id: 'FASTAPI', label: 'FastAPI', desc: 'Python / SQLAlchemy', color: '#fb923c' }
+            ].map((fw) => {
+              const active = targetFramework === fw.id;
+              return (
+                <button
+                  key={fw.id}
+                  onClick={() => setTargetFramework(fw.id)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: active ? `1px solid ${fw.color}` : '1px solid var(--glass-border)',
+                    background: active 
+                      ? `rgba(${fw.id === 'SPRING_BOOT' ? '74, 222, 128' : fw.id === 'EXPRESS' ? '56, 189, 248' : '251, 146, 60'}, 0.08)` 
+                      : 'rgba(255,255,255,0.01)',
+                    cursor: 'pointer',
+                    width: '100%',
+                    textAlign: 'left',
+                    transition: 'all 0.2s ease',
+                    boxShadow: active 
+                      ? `0 0 12px rgba(${fw.id === 'SPRING_BOOT' ? '74, 222, 128' : fw.id === 'EXPRESS' ? '56, 189, 248' : '251, 146, 60'}, 0.12)` 
+                      : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                    <span style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: fw.color
+                    }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                      {fw.label}
+                    </span>
+                    {active && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '0.6rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: fw.color,
+                        fontWeight: 700
+                      }}>
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', marginLeft: '14px' }}>
+                    {fw.desc}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{ borderTop: '1px solid var(--glass-border)', margin: '16px 0 0 0', padding: '16px 0 0 0' }}>
           <label className="section-label" style={{ marginBottom: '8px' }}>Generator Features</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={openApiSupport}
-                onChange={(e) => setOpenApiSupport(e.target.checked)}
-                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
-              />
-              <span>OpenAPI / Swagger Docs</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={generateTestStubs}
-                onChange={(e) => setGenerateTestStubs(e.target.checked)}
-                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
-              />
-              <span>Mockito Service Unit Tests</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={flywayMigration}
-                onChange={(e) => setFlywayMigration(e.target.checked)}
-                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
-              />
-              <span>Flyway SQL Migrations</span>
-            </label>
+            {/* OpenAPI Feature */}
+            {(() => {
+              const isSupported = targetFramework === 'SPRING_BOOT' || targetFramework === 'FASTAPI';
+              return (
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px', 
+                    fontSize: '0.8rem', 
+                    cursor: isSupported ? 'pointer' : 'not-allowed',
+                    opacity: isSupported ? 1 : 0.45,
+                    transition: 'opacity 0.2s'
+                  }}
+                  title={!isSupported ? "OpenAPI documentation is not supported for Express scaffolding." : "Enable OpenAPI/Swagger Docs generation"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSupported ? openApiSupport : false}
+                    disabled={!isSupported}
+                    onChange={(e) => setOpenApiSupport(e.target.checked)}
+                    style={{ 
+                      accentColor: 'var(--text-main)', 
+                      width: '14px', 
+                      height: '14px', 
+                      marginTop: '2px',
+                      cursor: isSupported ? 'pointer' : 'not-allowed' 
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>OpenAPI / Swagger Docs</span>
+                    {!isSupported && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
+                        Not supported for Express
+                      </span>
+                    )}
+                  </div>
+                </label>
+              );
+            })()}
+
+            {/* Mockito Tests Feature */}
+            {(() => {
+              const isSupported = targetFramework === 'SPRING_BOOT';
+              return (
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px', 
+                    fontSize: '0.8rem', 
+                    cursor: isSupported ? 'pointer' : 'not-allowed',
+                    opacity: isSupported ? 1 : 0.45,
+                    transition: 'opacity 0.2s'
+                  }}
+                  title={!isSupported ? "Mockito service tests are Spring Boot specific." : "Enable Mockito Service Unit Tests generation"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSupported ? generateTestStubs : false}
+                    disabled={!isSupported}
+                    onChange={(e) => setGenerateTestStubs(e.target.checked)}
+                    style={{ 
+                      accentColor: 'var(--text-main)', 
+                      width: '14px', 
+                      height: '14px', 
+                      marginTop: '2px',
+                      cursor: isSupported ? 'pointer' : 'not-allowed' 
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>Mockito Service Unit Tests</span>
+                    {!isSupported && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
+                        Spring Boot only
+                      </span>
+                    )}
+                  </div>
+                </label>
+              );
+            })()}
+
+            {/* Flyway SQL migrations Feature */}
+            {(() => {
+              const isSupported = targetFramework === 'SPRING_BOOT';
+              return (
+                <label 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    gap: '8px', 
+                    fontSize: '0.8rem', 
+                    cursor: isSupported ? 'pointer' : 'not-allowed',
+                    opacity: isSupported ? 1 : 0.45,
+                    transition: 'opacity 0.2s'
+                  }}
+                  title={!isSupported ? "Flyway SQL Migrations are Spring Boot specific." : "Enable Flyway SQL Migrations generation"}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSupported ? flywayMigration : false}
+                    disabled={!isSupported}
+                    onChange={(e) => setFlywayMigration(e.target.checked)}
+                    style={{ 
+                      accentColor: 'var(--text-main)', 
+                      width: '14px', 
+                      height: '14px', 
+                      marginTop: '2px',
+                      cursor: isSupported ? 'pointer' : 'not-allowed' 
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>Flyway SQL Migrations</span>
+                    {!isSupported && (
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
+                        Spring Boot only
+                      </span>
+                    )}
+                  </div>
+                </label>
+              );
+            })()}
           </div>
         </div>
       </div>

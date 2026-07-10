@@ -126,10 +126,60 @@ function ScaffyAppContent() {
           <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(120,120,120,0.1)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
             v1.0
           </span>
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: 500,
+            padding: '4px 10px',
+            borderRadius: '20px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginLeft: '8px',
+            background: 
+              targetFramework === 'SPRING_BOOT' 
+                ? 'rgba(74, 222, 128, 0.1)' 
+                : targetFramework === 'EXPRESS' 
+                ? 'rgba(56, 189, 248, 0.1)' 
+                : 'rgba(251, 146, 60, 0.1)',
+            color: 
+              targetFramework === 'SPRING_BOOT' 
+                ? '#4ade80' 
+                : targetFramework === 'EXPRESS' 
+                ? '#38bdf8' 
+                : '#fb923c',
+            border: `1px solid ${
+              targetFramework === 'SPRING_BOOT' 
+                ? 'rgba(74, 222, 128, 0.2)' 
+                : targetFramework === 'EXPRESS' 
+                ? 'rgba(56, 189, 248, 0.2)' 
+                : 'rgba(251, 146, 60, 0.2)'
+            }`
+          }}>
+            <span style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: 
+                targetFramework === 'SPRING_BOOT' 
+                  ? '#4ade80' 
+                  : targetFramework === 'EXPRESS' 
+                  ? '#38bdf8' 
+                  : '#fb923c',
+            }} />
+            {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express TS' : 'FastAPI'}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Design ER diagrams and generate custom production-ready Spring Boot scaffolding in one click.
+            Design ER diagrams and generate custom production-ready{' '}
+            <strong style={{ color: 'var(--text-primary)' }}>
+              {targetFramework === 'SPRING_BOOT'
+                ? 'Spring Boot'
+                : targetFramework === 'EXPRESS'
+                ? 'Express (TypeScript)'
+                : 'FastAPI (Python)'}
+            </strong>{' '}
+            scaffolding in one click.
           </div>
           <button 
             onClick={toggleTheme} 

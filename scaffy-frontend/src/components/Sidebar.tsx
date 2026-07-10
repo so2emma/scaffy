@@ -70,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
   };
 
   return (
-    <div className="sidebar" style={{ borderLeft: 'none', borderRight: '1px solid var(--glass-border)', width: '320px' }}>
+    <div className="sidebar" style={{ borderLeft: 'none', borderRight: '1px solid var(--glass-border)', width: '320px', height: '100%', overflowY: 'auto' }}>
       <h3 className="sidebar-title">Project Config</h3>
 
       <div className="sidebar-section">
@@ -85,16 +85,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
           />
         </div>
 
-        <div className="sidebar-field">
-          <label className="input-label">Base Package</label>
-          <input
-            type="text"
-            className="text-input"
-            value={basePackage}
-            onChange={(e) => setBasePackage(e.target.value)}
-            placeholder="com.example.project"
-          />
-        </div>
+        {targetFramework === 'SPRING_BOOT' && (
+          <div className="sidebar-field">
+            <label className="input-label">Base Package</label>
+            <input
+              type="text"
+              className="text-input"
+              value={basePackage}
+              onChange={(e) => setBasePackage(e.target.value)}
+              placeholder="com.example.project"
+            />
+          </div>
+        )}
 
         <div className="sidebar-field">
           <label className="input-label" style={{ marginBottom: '8px', display: 'block' }}>Target Framework</label>
@@ -312,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
         </div>
       </div>
 
-      <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px', flex: 1, overflowY: 'auto' }}>
+      <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
         <label className="section-label">Entities ({nodes.length})</label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
           {nodes.length === 0 ? (

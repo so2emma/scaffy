@@ -6,7 +6,7 @@ import ${entity.name?uncap_first}Route from './${entity.name?uncap_first}Route';
 const router = Router();
 
 <#list preparedEntities as entity>
-router.use('/${entity.name?lower_case}s', ${entity.name?uncap_first}Route);
+router.use('/${entity.pluralLowerName}', ${entity.name?uncap_first}Route);
 </#list>
 
 export default router;

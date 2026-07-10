@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from .config import settings
 from .database import engine, Base
+from . import models
 from .routers import <#list entities as entity>${toSnakeCase(entity.name)}<#if entity_has_next>, </#if></#list>
 
 # Create database tables

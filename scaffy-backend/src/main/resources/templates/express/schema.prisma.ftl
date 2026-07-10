@@ -12,7 +12,7 @@ model ${entity.name} {
   <#-- Attributes -->
   <#list entity.attributes as attr>
   <#if attr.primaryKey>
-  ${attr.name} ${attr.prismaType} @id<#if attr.prismaType == "Int"> @default(autoincrement())<#elseif attr.type == "UUID"> @default(uuid())</#if>
+  ${attr.name} ${attr.prismaType} @id<#if attr.prismaType == "Int"> @default(autoincrement())<#elseif attr.type?lower_case == "uuid"> @default(uuid())</#if>
   <#else>
   ${attr.name} ${attr.prismaType}<#if attr.nullable>?</#if><#if attr.unique> @unique</#if><#if attr.prismaDefaultValue??> @default(${attr.prismaDefaultValue})</#if>
   </#if>

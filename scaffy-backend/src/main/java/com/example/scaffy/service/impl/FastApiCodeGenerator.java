@@ -65,7 +65,7 @@ public class FastApiCodeGenerator implements CodeGenerator {
 
             List<Map<String, Object>> preparedEntities = new ArrayList<>();
             for (EntityDto entity : diagram.getEntities()) {
-                preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes, tableNames));
+                preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes, tableNames, pkColumnNames));
             }
 
             Map<String, Object> rootModel = new HashMap<>();
@@ -199,9 +199,19 @@ public class FastApiCodeGenerator implements CodeGenerator {
                     ? entity.getTableName().trim() : toSnakeCase(entity.getName()));
         }
 
+        Map<String, String> pkColumnNames = new HashMap<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            String pkColumnName = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(attr -> toSnakeCase(attr.getName()))
+                    .findFirst()
+                    .orElse("id");
+            pkColumnNames.put(entity.getName(), pkColumnName);
+        }
+
         List<Map<String, Object>> preparedEntities = new ArrayList<>();
         for (EntityDto entity : diagram.getEntities()) {
-            preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes, tableNames));
+            preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes, tableNames, pkColumnNames));
         }
 
         Map<String, Object> entityModel = null;
@@ -249,7 +259,7 @@ public class FastApiCodeGenerator implements CodeGenerator {
         return writer.toString();
     }
 
-    private Map<String, Object> prepareEntityModel(EntityDto entity, DiagramDto diagram, Map<String, String> entityIdTypes, Map<String, String> tableNames) {
+    private Map<String, Object> prepareEntityModel(EntityDto entity, DiagramDto diagram, Map<String, String> entityIdTypes, Map<String, String> tableNames, Map<String, String> pkColumnNames) {
         Map<String, Object> model = new HashMap<>();
         model.put("projectName", diagram.getProjectName());
         model.put("name", entity.getName());
@@ -304,6 +314,7 @@ public class FastApiCodeGenerator implements CodeGenerator {
 
         model.put("attributes", attributesList);
         model.put("primaryKeyName", primaryKeyName);
+        model.put("primaryKeyColumnName", toSnakeCase(primaryKeyName));
         model.put("primaryKeyTypeJava", primaryKeyTypeJava);
         model.put("primaryKeyTypePython", mapToPythonType(primaryKeyTypeJava));
         model.put("primaryKeyTypeSql", mapToSqlAlchemyType(primaryKeyTypeJava));
@@ -380,6 +391,7 @@ public class FastApiCodeGenerator implements CodeGenerator {
                 relMap.put("fieldName", fieldName);
                 relMap.put("targetIdType", entityIdTypes.getOrDefault(targetType, "Long"));
                 relMap.put("targetIdTypeSql", mapToSqlAlchemyType(entityIdTypes.getOrDefault(targetType, "Long")));
+                relMap.put("targetPKColumnName", pkColumnNames.getOrDefault(targetType, "id"));
                 relMap.put("owner", isOwner);
                 relMap.put("mappedBy", mappedBy);
                 relMap.put("otherFieldName", otherFieldName);
@@ -403,28 +415,26 @@ public class FastApiCodeGenerator implements CodeGenerator {
 
     private String mapToPythonType(String javaType) {
         if (javaType == null) return "str";
-        switch (javaType) {
-            case "Long":
-            case "Integer":
+        switch (javaType.trim().toLowerCase()) {
+            case "long":
+            case "integer":
             case "int":
                 return "int";
-            case "Boolean":
             case "boolean":
                 return "bool";
-            case "Float":
             case "float":
-            case "Double":
             case "double":
                 return "float";
-            case "BigDecimal":
+            case "bigdecimal":
+            case "numeric":
                 return "Decimal";
-            case "LocalDateTime":
+            case "localdatetime":
                 return "datetime.datetime";
-            case "LocalDate":
+            case "localdate":
                 return "datetime.date";
-            case "LocalTime":
+            case "localtime":
                 return "datetime.time";
-            case "UUID":
+            case "uuid":
                 return "UUID";
             default:
                 return "str";
@@ -433,28 +443,26 @@ public class FastApiCodeGenerator implements CodeGenerator {
 
     private String mapToSqlAlchemyType(String javaType) {
         if (javaType == null) return "String";
-        switch (javaType) {
-            case "Long":
-            case "Integer":
+        switch (javaType.trim().toLowerCase()) {
+            case "long":
+            case "integer":
             case "int":
                 return "Integer";
-            case "Boolean":
             case "boolean":
                 return "Boolean";
-            case "Float":
             case "float":
-            case "Double":
             case "double":
                 return "Float";
-            case "BigDecimal":
+            case "bigdecimal":
+            case "numeric":
                 return "Numeric";
-            case "LocalDateTime":
+            case "localdatetime":
                 return "DateTime";
-            case "LocalDate":
+            case "localdate":
                 return "Date";
-            case "LocalTime":
+            case "localtime":
                 return "Time";
-            case "UUID":
+            case "uuid":
                 return "String";
             default:
                 return "String";

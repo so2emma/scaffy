@@ -258,6 +258,8 @@ public class ExpressCodeGenerator implements CodeGenerator {
         Map<String, Object> model = new HashMap<>();
         model.put("projectName", diagram.getProjectName());
         model.put("name", entity.getName());
+        model.put("pluralName", toPlural(entity.getName()));
+        model.put("pluralLowerName", toPlural(entity.getName()).toLowerCase());
         model.put("tableName", (entity.getTableName() != null && !entity.getTableName().trim().isEmpty())
                 ? entity.getTableName().trim() : toSnakeCase(entity.getName()));
         model.put("softDelete", entity.isSoftDelete());

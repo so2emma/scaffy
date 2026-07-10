@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ${name}Service } from '../services/${name?uncap_first}Service';
 import { ApiError } from '../errors/apiError';
 
-<#assign isNumericId = (primaryKeyType == "Long" || primaryKeyType == "Integer" || primaryKeyType == "Int")>
+<#assign isNumericId = (primaryKeyType?lower_case == "long" || primaryKeyType?lower_case == "integer" || primaryKeyType?lower_case == "int")>
 
 const service = new ${name}Service();
 

@@ -28,6 +28,7 @@ function ScaffyAppContent() {
   const edges = useDiagramStore((state) => state.edges);
   const projectName = useDiagramStore((state) => state.projectName);
   const basePackage = useDiagramStore((state) => state.basePackage);
+  const targetFramework = useDiagramStore((state) => state.targetFramework);
 
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,7 +49,7 @@ function ScaffyAppContent() {
     }, 400); // Debounce check by 400ms
 
     return () => clearTimeout(delayDebounceFn);
-  }, [nodes, edges, projectName, basePackage]);
+  }, [nodes, edges, projectName, basePackage, targetFramework]);
 
   const runValidation = async (): Promise<boolean> => {
     try {

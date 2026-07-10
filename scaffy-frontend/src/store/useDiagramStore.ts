@@ -58,6 +58,7 @@ interface DiagramState {
   openApiSupport: boolean;
   generateTestStubs: boolean;
   flywayMigration: boolean;
+  targetFramework: string;
   
   // History State
   past: Array<{ nodes: EntityNode[]; edges: Edge[] }>;
@@ -68,6 +69,7 @@ interface DiagramState {
   setOpenApiSupport: (enabled: boolean) => void;
   setGenerateTestStubs: (enabled: boolean) => void;
   setFlywayMigration: (enabled: boolean) => void;
+  setTargetFramework: (framework: string) => void;
   
   addEntity: (name: string, x: number, y: number) => void;
   updateEntityName: (nodeId: string, name: string) => void;
@@ -109,6 +111,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   openApiSupport: false,
   generateTestStubs: false,
   flywayMigration: false,
+  targetFramework: 'SPRING_BOOT',
   
   past: [],
   future: [],
@@ -118,6 +121,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   setOpenApiSupport: (openApiSupport) => set({ openApiSupport }),
   setGenerateTestStubs: (generateTestStubs) => set({ generateTestStubs }),
   setFlywayMigration: (flywayMigration) => set({ flywayMigration }),
+  setTargetFramework: (targetFramework) => set({ targetFramework }),
   toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
 
   takeSnapshot: () => {
@@ -250,6 +254,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     set({
       projectName: schema.projectName || 'MyProject',
       basePackage: schema.basePackage || 'com.example.project',
+      targetFramework: schema.targetFramework || 'SPRING_BOOT',
       openApiSupport: !!schema.openApiSupport,
       generateTestStubs: !!schema.generateTestStubs,
       flywayMigration: !!schema.flywayMigration,
@@ -547,6 +552,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
     return {
       projectName: state.projectName,
       basePackage: state.basePackage,
+      targetFramework: state.targetFramework,
       openApiSupport: state.openApiSupport,
       generateTestStubs: state.generateTestStubs,
       flywayMigration: state.flywayMigration,

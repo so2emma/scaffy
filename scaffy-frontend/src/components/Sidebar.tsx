@@ -13,6 +13,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
   
   const basePackage = useDiagramStore((state) => state.basePackage);
   const setBasePackage = useDiagramStore((state) => state.setBasePackage);
+  const targetFramework = useDiagramStore((state) => state.targetFramework);
+  const setTargetFramework = useDiagramStore((state) => state.setTargetFramework);
 
   const openApiSupport = useDiagramStore((state) => state.openApiSupport);
   const setOpenApiSupport = useDiagramStore((state) => state.setOpenApiSupport);
@@ -32,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
     const dataToSave = {
       projectName: storeState.projectName,
       basePackage: storeState.basePackage,
+      targetFramework: storeState.targetFramework,
       openApiSupport: storeState.openApiSupport,
       generateTestStubs: storeState.generateTestStubs,
       flywayMigration: storeState.flywayMigration,
@@ -53,6 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
       useDiagramStore.setState({
         projectName: parsed.projectName || 'MyProject',
         basePackage: parsed.basePackage || 'com.example.project',
+        targetFramework: parsed.targetFramework || 'SPRING_BOOT',
         openApiSupport: !!parsed.openApiSupport,
         generateTestStubs: !!parsed.generateTestStubs,
         flywayMigration: !!parsed.flywayMigration,
@@ -90,6 +94,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
             onChange={(e) => setBasePackage(e.target.value)}
             placeholder="com.example.project"
           />
+        </div>
+
+        <div className="sidebar-field">
+          <label className="input-label">Target Framework</label>
+          <select
+            className="text-input"
+            value={targetFramework}
+            onChange={(e) => setTargetFramework(e.target.value)}
+            style={{ width: "100%", cursor: "pointer", appearance: "auto" }}
+          >
+            <option value="SPRING_BOOT">Spring Boot</option>
+            <option value="EXPRESS">Express (Node.js/TS)</option>
+            <option value="FASTAPI">FastAPI (Python)</option>
+          </select>
         </div>
 
         <div style={{ borderTop: '1px solid var(--glass-border)', margin: '16px 0 0 0', padding: '16px 0 0 0' }}>

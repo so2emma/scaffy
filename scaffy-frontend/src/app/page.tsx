@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { Sidebar } from '../components/Sidebar';
 import { Canvas } from '../components/Canvas';
+import { ReactFlowProvider } from '@xyflow/react';
 import { ImportModal } from '../components/ImportModal';
 import { RelationshipPanel } from '../components/RelationshipPanel';
 import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
@@ -147,7 +148,9 @@ function ScaffyAppContent() {
 
         {/* Center Canvas & Code Preview Split */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', overflow: 'hidden' }}>
-          <Canvas onOpenImport={() => setIsImportOpen(true)} />
+          <ReactFlowProvider>
+            <Canvas onOpenImport={() => setIsImportOpen(true)} />
+          </ReactFlowProvider>
           {selectedEntityName && <CodePreviewDrawer entityName={selectedEntityName} />}
         </div>
         

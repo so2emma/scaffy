@@ -14,6 +14,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   const edges = useDiagramStore((state) => state.edges);
   const projectName = useDiagramStore((state) => state.projectName);
   const basePackage = useDiagramStore((state) => state.basePackage);
+  const targetFramework = useDiagramStore((state) => state.targetFramework);
 
   const openApiSupport = useDiagramStore((state) => state.openApiSupport);
   const generateTestStubs = useDiagramStore((state) => state.generateTestStubs);
@@ -64,7 +65,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }, 450); // Debounce fetch by 450ms while user edits fields
 
     return () => clearTimeout(delayDebounceFn);
-  }, [entityName, nodes, edges, projectName, basePackage, openApiSupport, generateTestStubs, flywayMigration]);
+  }, [entityName, nodes, edges, projectName, basePackage, openApiSupport, generateTestStubs, flywayMigration, targetFramework]);
 
   const fetchPreview = async () => {
     try {
@@ -189,7 +190,15 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
           <div className="preview-editor-wrapper">
             <Editor
               height="100%"
-              language={activeTab === 'Flyway SQL' ? 'sql' : 'java'}
+              language={
+                activeTab === 'Flyway SQL'
+                  ? 'sql'
+                  : targetFramework === 'EXPRESS'
+                  ? 'typescript'
+                  : targetFramework === 'FASTAPI'
+                  ? 'python'
+                  : 'java'
+              }
               theme={theme === 'dark' ? 'vs-dark' : 'light'}
               value={activeCode}
               loading={

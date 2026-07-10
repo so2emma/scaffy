@@ -34,10 +34,46 @@ public class CodeGeneratorService {
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             String projectFolder = toSnakeCase(diagram.getProjectName()) + "/";
 
+            // Precompute helper maps for SQL rendering
+            Map<String, String> entityIdTypes = new HashMap<>();
+            Map<String, String> tableNames = new HashMap<>();
+            Map<String, String> pkColumnNames = new HashMap<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                String idType = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(AttributeDto::getType)
+                        .findFirst()
+                        .orElse("Long");
+                entityIdTypes.put(entity.getName(), idType);
+                tableNames.put(entity.getName(), entity.getTableName());
+                
+                String pkColumnName = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(attr -> toSnakeCase(attr.getName()))
+                        .findFirst()
+                        .orElse("id");
+                pkColumnNames.put(entity.getName(), pkColumnName);
+            }
+
+            List<Map<String, Object>> preparedEntities = new ArrayList<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes));
+            }
+
             // 1. pom.xml
             Map<String, Object> rootModel = new HashMap<>();
             rootModel.put("basePackage", diagram.getBasePackage());
             rootModel.put("projectName", diagram.getProjectName());
+            rootModel.put("entities", diagram.getEntities());
+            rootModel.put("relationships", diagram.getRelationships());
+            rootModel.put("entityIdTypes", entityIdTypes);
+            rootModel.put("tableNames", tableNames);
+            rootModel.put("pkColumnNames", pkColumnNames);
+            rootModel.put("preparedEntities", preparedEntities);
+            rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+            rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+            rootModel.put("flywayMigration", diagram.isFlywayMigration());
+
             zos.putNextEntry(new ZipEntry(projectFolder + "pom.xml"));
             renderTemplate("pom.xml.ftl", rootModel, zos);
             zos.closeEntry();
@@ -46,6 +82,13 @@ public class CodeGeneratorService {
             zos.putNextEntry(new ZipEntry(projectFolder + "src/main/resources/application.properties"));
             renderTemplate("application.properties.ftl", rootModel, zos);
             zos.closeEntry();
+
+            // 2.5. Flyway migration V1__init.sql (Conditional)
+            if (diagram.isFlywayMigration()) {
+                zos.putNextEntry(new ZipEntry(projectFolder + "src/main/resources/db/migration/V1__init.sql"));
+                renderTemplate("V1__init.sql.ftl", rootModel, zos);
+                zos.closeEntry();
+            }
 
             // 3. Application.java
             String packagePath = "src/main/java/" + diagram.getBasePackage().replace('.', '/') + "/";
@@ -63,23 +106,15 @@ public class CodeGeneratorService {
             zos.closeEntry();
 
             // 5. Generate Entity and related architecture files
-            Map<String, String> entityIdTypes = new HashMap<>();
-            for (EntityDto entity : diagram.getEntities()) {
-                String idType = entity.getAttributes().stream()
-                        .filter(AttributeDto::isPrimaryKey)
-                        .map(AttributeDto::getType)
-                        .findFirst()
-                        .orElse("Long");
-                entityIdTypes.put(entity.getName(), idType);
-            }
-
-            for (EntityDto entity : diagram.getEntities()) {
-                Map<String, Object> entityModel = prepareEntityModel(entity, diagram, entityIdTypes);
+            for (int i = 0; i < diagram.getEntities().size(); i++) {
+                EntityDto entity = diagram.getEntities().get(i);
+                Map<String, Object> entityModel = preparedEntities.get(i);
 
                 // Java files paths
                 String name = entity.getName();
                 
                 // Enums (generate before Entity to ensure import compatibility)
+                @SuppressWarnings("unchecked")
                 List<Map<String, Object>> enums = (List<Map<String, Object>>) entityModel.get("enums");
                 for (Map<String, Object> enumData : enums) {
                     zos.putNextEntry(new ZipEntry(projectFolder + packagePath + "entity/" + enumData.get("enumClassName") + ".java"));
@@ -127,6 +162,18 @@ public class CodeGeneratorService {
                 renderTemplate("Controller.java.ftl", entityModel, zos);
                 zos.closeEntry();
             }
+
+            // 6. Generate Unit Test stubs if requested
+            if (diagram.isGenerateTestStubs()) {
+                for (int i = 0; i < diagram.getEntities().size(); i++) {
+                    EntityDto entity = diagram.getEntities().get(i);
+                    Map<String, Object> entityModel = preparedEntities.get(i);
+                    String name = entity.getName();
+                    zos.putNextEntry(new ZipEntry(projectFolder + "src/test/java/" + diagram.getBasePackage().replace('.', '/') + "/service/" + name + "ServiceImplTest.java"));
+                    renderTemplate("ServiceImplTest.java.ftl", entityModel, zos);
+                    zos.closeEntry();
+                }
+            }
         }
         return baos.toByteArray();
     }
@@ -145,6 +192,8 @@ public class CodeGeneratorService {
         model.put("name", entity.getName());
         model.put("tableName", (entity.getTableName() != null && !entity.getTableName().trim().isEmpty())
                 ? entity.getTableName().trim() : toSnakeCase(entity.getName()));
+        model.put("softDelete", entity.isSoftDelete());
+        model.put("openApiSupport", diagram.isOpenApiSupport());
 
         // Prepare Attributes
         List<Map<String, Object>> attributesList = new ArrayList<>();
@@ -162,6 +211,7 @@ public class CodeGeneratorService {
             attrMap.put("unique", attr.isUnique());
             attrMap.put("defaultValue", attr.getDefaultValue());
             attrMap.put("columnName", toSnakeCase(attr.getName()));
+            attrMap.put("validation", attr.getValidation());
 
             if (attr.isPrimaryKey()) {
                 primaryKeyName = attr.getName();
@@ -225,7 +275,14 @@ public class CodeGeneratorService {
                 }
 
                 if (isFrom) {
-                    targetType = rel.getTo();
+                    String actualTo = rel.getTo();
+                    for (EntityDto e : diagram.getEntities()) {
+                        if (e.getName().equalsIgnoreCase(rel.getTo())) {
+                            actualTo = e.getName();
+                            break;
+                        }
+                    }
+                    targetType = actualTo;
                     fieldName = rel.getFromField();
                     otherFieldName = isBidirectional ? rel.getToField() : null;
                     isNullable = fromNullable;
@@ -245,7 +302,14 @@ public class CodeGeneratorService {
                     }
                 } else {
                     // isTo is true
-                    targetType = rel.getFrom();
+                    String actualFrom = rel.getFrom();
+                    for (EntityDto e : diagram.getEntities()) {
+                        if (e.getName().equalsIgnoreCase(rel.getFrom())) {
+                            actualFrom = e.getName();
+                            break;
+                        }
+                    }
+                    targetType = actualFrom;
                     fieldName = rel.getToField();
                     otherFieldName = rel.getFromField();
                     isNullable = toNullable;
@@ -314,6 +378,102 @@ public class CodeGeneratorService {
         model.put("relationshipFields", relationshipFields);
 
         return model;
+    }
+
+    public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
+        Map<String, String> preview = new LinkedHashMap<>();
+        
+        EntityDto targetEntity = null;
+        for (EntityDto entity : diagram.getEntities()) {
+            if (entity.getName().equalsIgnoreCase(entityName)) {
+                targetEntity = entity;
+                break;
+            }
+        }
+        
+        if (targetEntity == null) {
+            throw new IllegalArgumentException("Entity not found in diagram: " + entityName);
+        }
+
+        Map<String, String> entityIdTypes = new HashMap<>();
+        Map<String, String> tableNames = new HashMap<>();
+        Map<String, String> pkColumnNames = new HashMap<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            String idType = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(AttributeDto::getType)
+                    .findFirst()
+                    .orElse("Long");
+            entityIdTypes.put(entity.getName(), idType);
+            tableNames.put(entity.getName(), entity.getTableName());
+            
+            String pkColumnName = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(attr -> toSnakeCase(attr.getName()))
+                    .findFirst()
+                    .orElse("id");
+            pkColumnNames.put(entity.getName(), pkColumnName);
+        }
+
+        List<Map<String, Object>> preparedEntities = new ArrayList<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes));
+        }
+
+        Map<String, Object> entityModel = null;
+        for (Map<String, Object> model : preparedEntities) {
+            if (((String) model.get("name")).equalsIgnoreCase(entityName)) {
+                entityModel = model;
+                break;
+            }
+        }
+
+        preview.put("Entity", renderTemplateToString("Entity.java.ftl", entityModel));
+        preview.put("Request DTO", renderTemplateToString("RequestDto.java.ftl", entityModel));
+        preview.put("Response DTO", renderTemplateToString("ResponseDto.java.ftl", entityModel));
+        preview.put("Mapper", renderTemplateToString("Mapper.java.ftl", entityModel));
+        preview.put("Repository", renderTemplateToString("Repository.java.ftl", entityModel));
+        preview.put("Service", renderTemplateToString("Service.java.ftl", entityModel));
+        preview.put("ServiceImpl", renderTemplateToString("ServiceImpl.java.ftl", entityModel));
+        preview.put("Controller", renderTemplateToString("Controller.java.ftl", entityModel));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> enums = (List<Map<String, Object>>) entityModel.get("enums");
+        if (enums != null) {
+            for (Map<String, Object> enumData : enums) {
+                String enumClassName = (String) enumData.get("enumClassName");
+                preview.put("Enum " + enumClassName, renderTemplateToString("Enum.java.ftl", enumData));
+            }
+        }
+
+        // Global Flyway SQL Migration (Conditional)
+        if (diagram.isFlywayMigration()) {
+            Map<String, Object> sqlModel = new HashMap<>();
+            sqlModel.put("projectName", diagram.getProjectName());
+            sqlModel.put("basePackage", diagram.getBasePackage());
+            sqlModel.put("entityIdTypes", entityIdTypes);
+            sqlModel.put("tableNames", tableNames);
+            sqlModel.put("pkColumnNames", pkColumnNames);
+            sqlModel.put("preparedEntities", preparedEntities);
+            sqlModel.put("openApiSupport", diagram.isOpenApiSupport());
+            sqlModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+            sqlModel.put("flywayMigration", diagram.isFlywayMigration());
+            preview.put("Flyway SQL", renderTemplateToString("V1__init.sql.ftl", sqlModel));
+        }
+
+        // Service Mockito Unit Test Stub (Conditional)
+        if (diagram.isGenerateTestStubs()) {
+            preview.put("Unit Test", renderTemplateToString("ServiceImplTest.java.ftl", entityModel));
+        }
+
+        return preview;
+    }
+
+    private String renderTemplateToString(String templateName, Map<String, Object> model) throws Exception {
+        Template template = freemarkerConfig.getTemplate(templateName);
+        java.io.StringWriter writer = new java.io.StringWriter();
+        template.process(model, writer);
+        return writer.toString();
     }
 
     private String toSnakeCase(String str) {

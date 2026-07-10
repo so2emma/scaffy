@@ -9,6 +9,8 @@ import ${basePackage}.service.${name}Service;
 import ${basePackage}.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -35,8 +37,9 @@ public class ${name}ServiceImpl implements ${name}Service {
 
     @Override
     @Transactional(readOnly = true)
-    public List<${name}ResponseDto> getAll() {
-        return ${name?uncap_first}Mapper.toDtoList(${name?uncap_first}Repository.findAll());
+    public Page<${name}ResponseDto> getAll(Pageable pageable) {
+        return ${name?uncap_first}Repository.findAll(pageable)
+                .map(${name?uncap_first}Mapper::toDto);
     }
 
     @Override

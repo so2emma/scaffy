@@ -14,6 +14,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
   const basePackage = useDiagramStore((state) => state.basePackage);
   const setBasePackage = useDiagramStore((state) => state.setBasePackage);
 
+  const openApiSupport = useDiagramStore((state) => state.openApiSupport);
+  const setOpenApiSupport = useDiagramStore((state) => state.setOpenApiSupport);
+  
+  const generateTestStubs = useDiagramStore((state) => state.generateTestStubs);
+  const setGenerateTestStubs = useDiagramStore((state) => state.setGenerateTestStubs);
+
+  const flywayMigration = useDiagramStore((state) => state.flywayMigration);
+  const setFlywayMigration = useDiagramStore((state) => state.setFlywayMigration);
+
   const addEntity = useDiagramStore((state) => state.addEntity);
   const nodes = useDiagramStore((state) => state.nodes);
 
@@ -23,6 +32,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
     const dataToSave = {
       projectName: storeState.projectName,
       basePackage: storeState.basePackage,
+      openApiSupport: storeState.openApiSupport,
+      generateTestStubs: storeState.generateTestStubs,
+      flywayMigration: storeState.flywayMigration,
       nodes: storeState.nodes,
       edges: storeState.edges
     };
@@ -41,6 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
       useDiagramStore.setState({
         projectName: parsed.projectName || 'MyProject',
         basePackage: parsed.basePackage || 'com.example.project',
+        openApiSupport: !!parsed.openApiSupport,
+        generateTestStubs: !!parsed.generateTestStubs,
+        flywayMigration: !!parsed.flywayMigration,
         nodes: parsed.nodes || [],
         edges: parsed.edges || []
       });
@@ -75,6 +90,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
             onChange={(e) => setBasePackage(e.target.value)}
             placeholder="com.example.project"
           />
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--glass-border)', margin: '16px 0 0 0', padding: '16px 0 0 0' }}>
+          <label className="section-label" style={{ marginBottom: '8px' }}>Generator Features</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={openApiSupport}
+                onChange={(e) => setOpenApiSupport(e.target.checked)}
+                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
+              />
+              <span>OpenAPI / Swagger Docs</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={generateTestStubs}
+                onChange={(e) => setGenerateTestStubs(e.target.checked)}
+                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
+              />
+              <span>Mockito Service Unit Tests</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={flywayMigration}
+                onChange={(e) => setFlywayMigration(e.target.checked)}
+                style={{ accentColor: 'var(--text-main)', width: '14px', height: '14px', cursor: 'pointer' }}
+              />
+              <span>Flyway SQL Migrations</span>
+            </label>
+          </div>
         </div>
       </div>
 

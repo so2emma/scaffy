@@ -20,8 +20,20 @@ public class ${name}RequestDto {
 
     <#list attributes as attr>
     <#if !attr.primaryKey>
-    <#if !attr.nullable>
+    <#if attr.validation??>
+        <#if attr.validation.required>
     @NotNull(message = "${attr.name} is required")
+        </#if>
+        <#if attr.validation.email>
+    @Email(message = "Invalid email format for ${attr.name}")
+        </#if>
+        <#if attr.validation.minSize?? || attr.validation.maxSize??>
+    @Size(<#if attr.validation.minSize??>min = ${attr.validation.minSize}</#if><#if attr.validation.minSize?? && attr.validation.maxSize??>, </#if><#if attr.validation.maxSize??>max = ${attr.validation.maxSize}</#if>, message = "Size of ${attr.name} must be between ${attr.validation.minSize!0} and ${attr.validation.maxSize!2147483647}")
+        </#if>
+    <#else>
+        <#if !attr.nullable>
+    @NotNull(message = "${attr.name} is required")
+        </#if>
     </#if>
     private <#if attr.type == "Enum">${name}${attr.name?cap_first}<#else>${attr.type}</#if> ${attr.name};
 

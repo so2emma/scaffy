@@ -16,4 +16,17 @@ public class AttributeDto {
     private boolean nullable;
     private boolean unique;
     private String defaultValue;
+    private ValidationConfigDto validation;
+
+    // Manual constructor for backward compatibility in tests
+    public AttributeDto(String name, String type, List<String> enumValues, boolean primaryKey, boolean nullable, boolean unique, String defaultValue) {
+        this.name = name;
+        this.type = type;
+        this.enumValues = enumValues;
+        this.primaryKey = primaryKey;
+        this.nullable = nullable;
+        this.unique = unique;
+        this.defaultValue = defaultValue;
+        this.validation = null;
+    }
 }

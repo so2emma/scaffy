@@ -7,11 +7,15 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
   const node = useDiagramStore((state) => state.nodes.find((n) => n.id === id));
   const updateEntityName = useDiagramStore((state) => state.updateEntityName);
   const updateEntityTableName = useDiagramStore((state) => state.updateEntityTableName);
+  const updateEntitySoftDelete = useDiagramStore((state) => state.updateEntitySoftDelete);
   const removeEntity = useDiagramStore((state) => state.removeEntity);
   
   const addAttribute = useDiagramStore((state) => state.addAttribute);
   const updateAttribute = useDiagramStore((state) => state.updateAttribute);
   const removeAttribute = useDiagramStore((state) => state.removeAttribute);
+  const updateAttributeValidation = useDiagramStore((state) => state.updateAttributeValidation);
+
+  const [expandedIndex, setExpandedIndex] = React.useState<number | null>(null);
 
   if (!node) return null;
 
@@ -65,11 +69,23 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
           <input
             type="text"
             className="text-input"
-            style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'rgba(0,0,0,0.2)' }}
+            style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'rgba(120, 120, 120, 0.15)' }}
             value={tableName}
             onChange={handleTableChange}
             placeholder="table_name (optional)"
           />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+          <input
+            type="checkbox"
+            id={`softdelete-${id}`}
+            checked={!!node.data.softDelete}
+            onChange={(e) => updateEntitySoftDelete(id, e.target.checked)}
+            style={{ accentColor: 'var(--text-main)', width: '12px', height: '12px', cursor: 'pointer' }}
+          />
+          <label htmlFor={`softdelete-${id}`} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+            Soft-Delete (adds deletedAt)
+          </label>
         </div>
       </div>
 
@@ -78,78 +94,163 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
         <table className="attributes-table">
           <tbody>
             {attributes.map((attr, index) => (
-              <tr key={index} className="attr-row">
-                {/* Attr Name */}
-                <td className="attr-cell" style={{ width: '40%' }}>
-                  <input
-                    type="text"
-                    className="attr-input-name"
-                    value={attr.name}
-                    onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
-                    placeholder="field"
-                  />
-                </td>
+              <React.Fragment key={index}>
+                <tr className="attr-row">
+                  {/* Attr Name */}
+                  <td className="attr-cell" style={{ width: '30%' }}>
+                    <input
+                      type="text"
+                      className="attr-input-name"
+                      value={attr.name}
+                      onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
+                      placeholder="field"
+                    />
+                  </td>
 
-                {/* Attr Type */}
-                <td className="attr-cell" style={{ width: '30%' }}>
-                  <select
-                    className="attr-select-type"
-                    value={attr.type}
-                    onChange={(e) => handleAttributeChange(index, 'type', e.target.value)}
-                  >
-                    <option value="String">String</option>
-                    <option value="Integer">Integer</option>
-                    <option value="Long">Long</option>
-                    <option value="UUID">UUID</option>
-                    <option value="Boolean">Boolean</option>
-                    <option value="LocalDate">LocalDate</option>
-                    <option value="LocalDateTime">LocalDateTime</option>
-                    <option value="BigDecimal">BigDecimal</option>
-                    <option value="Enum">Enum</option>
-                  </select>
-                </td>
+                  {/* Attr Type */}
+                  <td className="attr-cell" style={{ width: '28%' }}>
+                    <select
+                      className="attr-select-type"
+                      value={attr.type}
+                      onChange={(e) => {
+                        handleAttributeChange(index, 'type', e.target.value);
+                        // Reset validation if type changes to non-String
+                        if (e.target.value !== 'String') {
+                          updateAttributeValidation(id, index, { email: false, minSize: null, maxSize: null });
+                        }
+                      }}
+                    >
+                      <option value="String">String</option>
+                      <option value="Integer">Integer</option>
+                      <option value="Long">Long</option>
+                      <option value="UUID">UUID</option>
+                      <option value="Boolean">Boolean</option>
+                      <option value="LocalDate">LocalDate</option>
+                      <option value="LocalDateTime">LocalDateTime</option>
+                      <option value="BigDecimal">BigDecimal</option>
+                      <option value="Enum">Enum</option>
+                    </select>
+                  </td>
 
-                {/* Flags PK, NN, UQ */}
-                <td className="attr-cell" style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
-                  <button
-                    className={`attr-flag-btn ${attr.primaryKey ? 'active-pk' : ''}`}
-                    onClick={() => {
-                      handleAttributeChange(index, 'primaryKey', !attr.primaryKey);
-                      if (!attr.primaryKey) {
-                        handleAttributeChange(index, 'nullable', false);
-                      }
-                    }}
-                    title="Primary Key"
-                  >
-                    PK
-                  </button>
-                  <button
-                    className={`attr-flag-btn ${!attr.nullable ? 'active' : ''}`}
-                    disabled={attr.primaryKey}
-                    onClick={() => handleAttributeChange(index, 'nullable', !attr.nullable)}
-                    title="Not Null"
-                  >
-                    NN
-                  </button>
-                  <button
-                    className={`attr-flag-btn ${attr.unique ? 'active' : ''}`}
-                    onClick={() => handleAttributeChange(index, 'unique', !attr.unique)}
-                    title="Unique"
-                  >
-                    UQ
-                  </button>
-                </td>
+                  {/* Flags PK, NN, UQ */}
+                  <td className="attr-cell" style={{ width: '30%' }}>
+                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
+                      <button
+                        className={`attr-flag-btn ${attr.primaryKey ? 'active-pk' : ''}`}
+                        onClick={() => {
+                          handleAttributeChange(index, 'primaryKey', !attr.primaryKey);
+                          if (!attr.primaryKey) {
+                            handleAttributeChange(index, 'nullable', false);
+                          }
+                        }}
+                        title="Primary Key"
+                      >
+                        PK
+                      </button>
+                      <button
+                        className={`attr-flag-btn ${!attr.nullable ? 'active' : ''}`}
+                        disabled={attr.primaryKey}
+                        onClick={() => handleAttributeChange(index, 'nullable', !attr.nullable)}
+                        title="Not Null"
+                      >
+                        NN
+                      </button>
+                      <button
+                        className={`attr-flag-btn ${attr.unique ? 'active' : ''}`}
+                        onClick={() => handleAttributeChange(index, 'unique', !attr.unique)}
+                        title="Unique"
+                      >
+                        UQ
+                      </button>
+                    </div>
+                  </td>
 
-                {/* Delete */}
-                <td className="attr-cell" style={{ width: '10%' }}>
-                  <button
-                    className="attr-delete-btn"
-                    onClick={() => removeAttribute(id, index)}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </td>
-              </tr>
+                  {/* Settings & Delete */}
+                  <td className="attr-cell" style={{ width: '12%', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <button
+                        className={`attr-flag-btn ${expandedIndex === index ? 'active' : ''}`}
+                        onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                        title="Validation Settings"
+                        style={{ padding: '2px 4px', fontSize: '0.6rem' }}
+                      >
+                        <Settings size={10} />
+                      </button>
+                      <button
+                        className="attr-delete-btn"
+                        onClick={() => {
+                          if (expandedIndex === index) setExpandedIndex(null);
+                          removeAttribute(id, index);
+                        }}
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                {/* Custom Validation Expandable Panel */}
+                {expandedIndex === index && (
+                  <tr className="validation-row">
+                    <td colSpan={4} className="attr-cell" style={{ background: 'rgba(120, 120, 120, 0.08)', padding: '6px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                          Validation rules:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!attr.validation?.required}
+                              onChange={(e) => updateAttributeValidation(id, index, { required: e.target.checked })}
+                              style={{ accentColor: 'var(--text-main)', width: '11px', height: '11px' }}
+                            />
+                            <span>Required</span>
+                          </label>
+
+                          {attr.type === 'String' && (
+                            <>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', cursor: 'pointer' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!attr.validation?.email}
+                                  onChange={(e) => updateAttributeValidation(id, index, { email: e.target.checked })}
+                                  style={{ accentColor: 'var(--text-main)', width: '11px', height: '11px' }}
+                                />
+                                <span>Email</span>
+                              </label>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.65rem' }}>
+                                <span>Min:</span>
+                                <input
+                                  type="number"
+                                  className="text-input"
+                                  style={{ width: '42px', padding: '1px 3px', fontSize: '0.65rem', height: '18px', background: 'rgba(120, 120, 120, 0.15)' }}
+                                  value={attr.validation?.minSize ?? ''}
+                                  onChange={(e) => updateAttributeValidation(id, index, { minSize: e.target.value ? parseInt(e.target.value) : null })}
+                                  placeholder="0"
+                                />
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.65rem' }}>
+                                <span>Max:</span>
+                                <input
+                                  type="number"
+                                  className="text-input"
+                                  style={{ width: '42px', padding: '1px 3px', fontSize: '0.65rem', height: '18px', background: 'rgba(120, 120, 120, 0.15)' }}
+                                  value={attr.validation?.maxSize ?? ''}
+                                  onChange={(e) => updateAttributeValidation(id, index, { maxSize: e.target.value ? parseInt(e.target.value) : null })}
+                                  placeholder="255"
+                                />
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

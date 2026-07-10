@@ -5,8 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { Sidebar } from '../components/Sidebar';
 import { Canvas } from '../components/Canvas';
+import { ImportModal } from '../components/ImportModal';
 import { RelationshipPanel } from '../components/RelationshipPanel';
 import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
+import { CodePreviewDrawer } from '../components/CodePreviewDrawer';
 import { Database, Sun, Moon } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -28,6 +30,11 @@ function ScaffyAppContent() {
 
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+
+  // Compute selected entity name based on node selection in React Flow
+  const selectedNode = nodes.find((n) => n.selected);
+  const selectedEntityName = selectedNode ? selectedNode.data.name : null;
 
   // Debounced API-based validation for immediate feedback
   useEffect(() => {
@@ -138,8 +145,13 @@ function ScaffyAppContent() {
         {/* Left Project Sidebar */}
         <Sidebar onGenerate={handleGenerate} isGenerating={isGenerating} />
 
-        {/* Center Canvas */}
-        <Canvas />
+        {/* Center Canvas & Code Preview Split */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', overflow: 'hidden' }}>
+          <Canvas onOpenImport={() => setIsImportOpen(true)} />
+          {selectedEntityName && <CodePreviewDrawer entityName={selectedEntityName} />}
+        </div>
+        
+        <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
 
         {/* Right Relationship Config Panel */}
         <RelationshipPanel />

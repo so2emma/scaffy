@@ -24,6 +24,7 @@ public class CodeGeneratorServiceTest {
         DiagramDto diagram = new DiagramDto();
         diagram.setProjectName("LibrarySystem");
         diagram.setBasePackage("com.example.library");
+        diagram.setFlywayMigration(true);
 
         List<EntityDto> entities = new ArrayList<>();
 
@@ -65,6 +66,9 @@ public class CodeGeneratorServiceTest {
         Path projectRoot = tempDir.resolve("library_system");
         assertTrue(Files.exists(projectRoot), "Project folder 'library_system' should exist");
         assertTrue(Files.exists(projectRoot.resolve("pom.xml")), "pom.xml should exist in project folder");
+        
+        Path migrationFile = projectRoot.resolve("src/main/resources/db/migration/V1__init.sql");
+        assertTrue(Files.exists(migrationFile), "V1__init.sql migration script should exist");
 
         // Run Maven compile on the generated project
         System.out.println("Running 'mvn clean compile' on generated project in: " + projectRoot);
@@ -92,15 +96,25 @@ public class CodeGeneratorServiceTest {
         DiagramDto diagram = new DiagramDto();
         diagram.setProjectName("SalesSystem");
         diagram.setBasePackage("com.example.sales");
+        diagram.setOpenApiSupport(true);
+        diagram.setGenerateTestStubs(true);
+        diagram.setFlywayMigration(true);
 
         List<EntityDto> entities = new ArrayList<>();
 
-        // Customer (UUID PK)
+        // Customer (UUID PK) with Soft Delete
         EntityDto customer = new EntityDto("Customer", "customers", List.of(
                 new AttributeDto("id", "UUID", null, true, false, true, null),
                 new AttributeDto("name", "String", null, false, false, false, null),
                 new AttributeDto("email", "String", null, false, false, true, null)
         ));
+        customer.setSoftDelete(true);
+        
+        // Add validations to Customer email attribute
+        AttributeDto emailAttr = customer.getAttributes().stream()
+                .filter(attr -> attr.getName().equals("email"))
+                .findFirst().orElseThrow();
+        emailAttr.setValidation(new ValidationConfigDto(true, 5, 100, true));
 
         // Order (Long PK, Enum status)
         EntityDto order = new EntityDto("Order", "orders", List.of(
@@ -153,11 +167,14 @@ public class CodeGeneratorServiceTest {
         Path projectRoot = tempDir.resolve("sales_system");
         assertTrue(Files.exists(projectRoot), "Project folder 'sales_system' should exist");
         assertTrue(Files.exists(projectRoot.resolve("pom.xml")), "pom.xml should exist in project folder");
-
-        // Run Maven compile on the generated project
-        System.out.println("Running 'mvn clean compile' on generated project in: " + projectRoot);
         
-        ProcessBuilder pb = new ProcessBuilder("mvn", "clean", "compile");
+        Path migrationFile = projectRoot.resolve("src/main/resources/db/migration/V1__init.sql");
+        assertTrue(Files.exists(migrationFile), "V1__init.sql migration script should exist");
+
+        // Run Maven test on the generated project to verify unit test compilation & execution
+        System.out.println("Running 'mvn clean test' on generated project in: " + projectRoot);
+        
+        ProcessBuilder pb = new ProcessBuilder("mvn", "clean", "test");
         pb.directory(projectRoot.toFile());
         pb.redirectErrorStream(true);
         Process process = pb.start();
@@ -166,13 +183,59 @@ public class CodeGeneratorServiceTest {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println("[Maven complex-compile]: " + line);
+                System.out.println("[Maven complex-test]: " + line);
             }
         }
 
-        boolean finished = process.waitFor(90, TimeUnit.SECONDS);
+        boolean finished = process.waitFor(120, TimeUnit.SECONDS);
         assertTrue(finished, "Maven build timed out");
-        assertEquals(0, process.exitValue(), "Maven compilation failed for complex generated project!");
+        assertEquals(0, process.exitValue(), "Maven test execution failed for complex generated project!");
+    }
+
+    @Test
+    public void testGeneratePreview() throws Exception {
+        DiagramDto diagram = new DiagramDto();
+        diagram.setProjectName("LibrarySystem");
+        diagram.setBasePackage("com.example.library");
+        diagram.setFlywayMigration(true);
+
+        // Author
+        EntityDto author = new EntityDto("Author", "authors", List.of(
+                new AttributeDto("id", "Long", null, true, false, true, null),
+                new AttributeDto("name", "String", null, false, false, false, null),
+                new AttributeDto("status", "Enum", List.of("ACTIVE", "INACTIVE"), false, false, false, "ACTIVE")
+        ));
+        diagram.setEntities(List.of(author));
+        diagram.setRelationships(new ArrayList<>());
+
+        java.util.Map<String, String> preview = codeGeneratorService.generatePreview(diagram, "Author");
+        assertNotNull(preview);
+        
+        // Assert all 8 standard components + enum exist
+        assertTrue(preview.containsKey("Entity"));
+        assertTrue(preview.containsKey("Request DTO"));
+        assertTrue(preview.containsKey("Response DTO"));
+        assertTrue(preview.containsKey("Mapper"));
+        assertTrue(preview.containsKey("Repository"));
+        assertTrue(preview.containsKey("Service"));
+        assertTrue(preview.containsKey("ServiceImpl"));
+        assertTrue(preview.containsKey("Controller"));
+        assertTrue(preview.containsKey("Enum AuthorStatus"));
+        assertTrue(preview.containsKey("Flyway SQL"));
+
+        // Verify content details
+        String entityCode = preview.get("Entity");
+        assertTrue(entityCode.contains("public class Author"));
+        assertTrue(entityCode.contains("private Long id;"));
+        assertTrue(entityCode.contains("private AuthorStatus status;"));
+        
+        String dtoCode = preview.get("Request DTO");
+        assertTrue(dtoCode.contains("public class AuthorRequestDto"));
+        assertTrue(dtoCode.contains("private AuthorStatus status;"));
+
+        String sqlCode = preview.get("Flyway SQL");
+        assertTrue(sqlCode.contains("CREATE TABLE authors"));
+        assertTrue(sqlCode.contains("id BIGINT NOT NULL"));
     }
 
     private void unzip(byte[] zipBytes, Path destDir) throws IOException {

@@ -1,0 +1,182 @@
+import React from 'react';
+import { Handle, Position, NodeProps } from '@xyflow/react';
+import { useDiagramStore, Attribute } from '../store/useDiagramStore';
+import { Trash2, Plus, Settings } from 'lucide-react';
+
+export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
+  const node = useDiagramStore((state) => state.nodes.find((n) => n.id === id));
+  const updateEntityName = useDiagramStore((state) => state.updateEntityName);
+  const updateEntityTableName = useDiagramStore((state) => state.updateEntityTableName);
+  const removeEntity = useDiagramStore((state) => state.removeEntity);
+  
+  const addAttribute = useDiagramStore((state) => state.addAttribute);
+  const updateAttribute = useDiagramStore((state) => state.updateAttribute);
+  const removeAttribute = useDiagramStore((state) => state.removeAttribute);
+
+  if (!node) return null;
+
+  const { name, tableName, attributes } = node.data;
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // PascalCase validation hint
+    const val = e.target.value;
+    updateEntityName(id, val);
+  };
+
+  const handleTableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateEntityTableName(id, e.target.value);
+  };
+
+  const handleAttributeChange = (index: number, key: keyof Attribute, val: any) => {
+    updateAttribute(id, index, { [key]: val });
+  };
+
+  // Helper to edit enum values inline
+  const handleEnumValuesChange = (index: number, valueStr: string) => {
+    const values = valueStr.split(',').map(v => v.trim().toUpperCase()).filter(v => v !== '');
+    updateAttribute(id, index, { enumValues: values });
+  };
+
+  return (
+    <div className={`entity-node ${selected ? 'selected-node' : ''}`}>
+      {/* Target Handles */}
+      <Handle type="target" position={Position.Top} id="t-top" />
+      <Handle type="target" position={Position.Left} id="t-left" />
+
+      {/* Header */}
+      <div className="entity-header">
+        <div className="entity-header-row">
+          <input
+            type="text"
+            className="entity-title-input"
+            value={name}
+            onChange={handleNameChange}
+            placeholder="EntityName"
+          />
+          <button 
+            className="entity-delete-btn"
+            onClick={(e) => { e.stopPropagation(); removeEntity(id); }}
+            title="Delete Entity"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+        <div className="sidebar-field">
+          <input
+            type="text"
+            className="text-input"
+            style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'rgba(0,0,0,0.2)' }}
+            value={tableName}
+            onChange={handleTableChange}
+            placeholder="table_name (optional)"
+          />
+        </div>
+      </div>
+
+      {/* Attributes List */}
+      <div className="entity-body">
+        <table className="attributes-table">
+          <tbody>
+            {attributes.map((attr, index) => (
+              <tr key={index} className="attr-row">
+                {/* Attr Name */}
+                <td className="attr-cell" style={{ width: '40%' }}>
+                  <input
+                    type="text"
+                    className="attr-input-name"
+                    value={attr.name}
+                    onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
+                    placeholder="field"
+                  />
+                </td>
+
+                {/* Attr Type */}
+                <td className="attr-cell" style={{ width: '30%' }}>
+                  <select
+                    className="attr-select-type"
+                    value={attr.type}
+                    onChange={(e) => handleAttributeChange(index, 'type', e.target.value)}
+                  >
+                    <option value="String">String</option>
+                    <option value="Integer">Integer</option>
+                    <option value="Long">Long</option>
+                    <option value="UUID">UUID</option>
+                    <option value="Boolean">Boolean</option>
+                    <option value="LocalDate">LocalDate</option>
+                    <option value="LocalDateTime">LocalDateTime</option>
+                    <option value="BigDecimal">BigDecimal</option>
+                    <option value="Enum">Enum</option>
+                  </select>
+                </td>
+
+                {/* Flags PK, NN, UQ */}
+                <td className="attr-cell" style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
+                  <button
+                    className={`attr-flag-btn ${attr.primaryKey ? 'active-pk' : ''}`}
+                    onClick={() => {
+                      handleAttributeChange(index, 'primaryKey', !attr.primaryKey);
+                      if (!attr.primaryKey) {
+                        handleAttributeChange(index, 'nullable', false);
+                      }
+                    }}
+                    title="Primary Key"
+                  >
+                    PK
+                  </button>
+                  <button
+                    className={`attr-flag-btn ${!attr.nullable ? 'active' : ''}`}
+                    disabled={attr.primaryKey}
+                    onClick={() => handleAttributeChange(index, 'nullable', !attr.nullable)}
+                    title="Not Null"
+                  >
+                    NN
+                  </button>
+                  <button
+                    className={`attr-flag-btn ${attr.unique ? 'active' : ''}`}
+                    onClick={() => handleAttributeChange(index, 'unique', !attr.unique)}
+                    title="Unique"
+                  >
+                    UQ
+                  </button>
+                </td>
+
+                {/* Delete */}
+                <td className="attr-cell" style={{ width: '10%' }}>
+                  <button
+                    className="attr-delete-btn"
+                    onClick={() => removeAttribute(id, index)}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Enum values editor row */}
+        {attributes.map((attr, index) => attr.type === 'Enum' && (
+          <div key={`enum-${index}`} className="enum-editor">
+            <div className="input-label" style={{ fontSize: '0.6rem' }}>Enum values (comma separated)</div>
+            <input
+              type="text"
+              className="text-input"
+              style={{ width: '100%', fontSize: '0.7rem', padding: '2px 6px' }}
+              value={attr.enumValues?.join(', ') || ''}
+              onChange={(e) => handleEnumValuesChange(index, e.target.value)}
+              placeholder="PENDING, SHIPPED, DELIVERED"
+            />
+          </div>
+        ))}
+
+        <button className="add-attr-btn" onClick={() => addAttribute(id)}>
+          <Plus size={12} /> Add Attribute
+        </button>
+      </div>
+
+      {/* Source Handles */}
+      <Handle type="source" position={Position.Bottom} id="s-bottom" />
+      <Handle type="source" position={Position.Right} id="s-right" />
+    </div>
+  );
+};

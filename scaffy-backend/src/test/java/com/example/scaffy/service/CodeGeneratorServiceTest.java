@@ -16,7 +16,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CodeGeneratorServiceTest {
 
-    private final CodeGeneratorService codeGeneratorService = new CodeGeneratorService();
+    private final CodeGeneratorService codeGeneratorService = new CodeGeneratorService(
+            List.of(new com.example.scaffy.service.impl.SpringBootCodeGenerator())
+    );
 
     @Test
     public void testGeneratedProjectCompiles(@TempDir Path tempDir) throws Exception {

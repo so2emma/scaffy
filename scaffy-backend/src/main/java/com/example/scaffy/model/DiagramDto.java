@@ -16,6 +16,7 @@ public class DiagramDto {
     private boolean openApiSupport;
     private boolean generateTestStubs;
     private boolean flywayMigration;
+    private String targetFramework;
 
     // Manual constructor for backward compatibility in tests
     public DiagramDto(String projectName, String basePackage, List<EntityDto> entities, List<RelationshipDto> relationships) {
@@ -26,5 +27,6 @@ public class DiagramDto {
         this.openApiSupport = false;
         this.generateTestStubs = false;
         this.flywayMigration = false;
+        this.targetFramework = "SPRING_BOOT";
     }
 }

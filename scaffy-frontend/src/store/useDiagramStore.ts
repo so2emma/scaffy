@@ -10,6 +10,7 @@ import {
   applyNodeChanges 
 } from '@xyflow/react';
 import dagre from '@dagrejs/dagre';
+import { getDefaultFeaturesForFramework } from '../constants/frameworkFeatures';
 
 export interface ValidationConfig {
   required: boolean;
@@ -55,9 +56,7 @@ interface DiagramState {
   edges: Edge[];
   selectedEdgeId: string | null;
   theme: 'light' | 'dark';
-  openApiSupport: boolean;
-  generateTestStubs: boolean;
-  flywayMigration: boolean;
+  enabledFeatures: Record<string, boolean>;
   targetFramework: string;
   
   // History State
@@ -66,10 +65,10 @@ interface DiagramState {
   
   setProjectName: (name: string) => void;
   setBasePackage: (pkg: string) => void;
-  setOpenApiSupport: (enabled: boolean) => void;
-  setGenerateTestStubs: (enabled: boolean) => void;
-  setFlywayMigration: (enabled: boolean) => void;
   setTargetFramework: (framework: string) => void;
+  toggleFeature: (featureId: string) => void;
+  setFeature: (featureId: string, value: boolean) => void;
+  isFeatureEnabled: (featureId: string) => boolean;
   
   addEntity: (name: string, x: number, y: number) => void;
   updateEntityName: (nodeId: string, name: string) => void;
@@ -108,9 +107,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   edges: [],
   selectedEdgeId: null,
   theme: 'dark',
-  openApiSupport: false,
-  generateTestStubs: false,
-  flywayMigration: false,
+  enabledFeatures: getDefaultFeaturesForFramework('SPRING_BOOT'),
   targetFramework: 'SPRING_BOOT',
   
   past: [],
@@ -118,15 +115,29 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
   setProjectName: (projectName) => set({ projectName }),
   setBasePackage: (basePackage) => set({ basePackage }),
-  setOpenApiSupport: (openApiSupport) => set({ openApiSupport }),
-  setGenerateTestStubs: (generateTestStubs) => set({ generateTestStubs }),
-  setFlywayMigration: (flywayMigration) => set({ flywayMigration }),
-  setTargetFramework: (targetFramework) => set({ targetFramework }),
+  setTargetFramework: (targetFramework) => set({
+    targetFramework,
+    enabledFeatures: getDefaultFeaturesForFramework(targetFramework),
+  }),
+  toggleFeature: (featureId) => set((state) => ({
+    enabledFeatures: {
+      ...state.enabledFeatures,
+      [featureId]: !state.enabledFeatures[featureId],
+    },
+  })),
+  setFeature: (featureId, value) => set((state) => ({
+    enabledFeatures: {
+      ...state.enabledFeatures,
+      [featureId]: value,
+    },
+  })),
+  isFeatureEnabled: (featureId) => {
+    return !!get().enabledFeatures[featureId];
+  },
   toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
 
   takeSnapshot: () => {
     const { nodes, edges, past } = get();
-    // Deep clone to cut object reference bounds
     const snapshot = {
       nodes: JSON.parse(JSON.stringify(nodes)),
       edges: JSON.parse(JSON.stringify(edges))
@@ -251,13 +262,25 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       };
     });
 
+    const framework = schema.targetFramework || 'SPRING_BOOT';
+
+    // Merge imported enabledFeatures with defaults for the framework
+    let enabledFeatures: Record<string, boolean>;
+    if (schema.enabledFeatures && typeof schema.enabledFeatures === 'object') {
+      enabledFeatures = { ...getDefaultFeaturesForFramework(framework), ...schema.enabledFeatures };
+    } else {
+      // Backward compat: map old booleans to enabledFeatures
+      enabledFeatures = getDefaultFeaturesForFramework(framework);
+      if (schema.openApiSupport !== undefined) enabledFeatures['openApi'] = !!schema.openApiSupport;
+      if (schema.generateTestStubs !== undefined) enabledFeatures['mockitoTests'] = !!schema.generateTestStubs;
+      if (schema.flywayMigration !== undefined) enabledFeatures['flywayMigration'] = !!schema.flywayMigration;
+    }
+
     set({
       projectName: schema.projectName || 'MyProject',
       basePackage: schema.basePackage || 'com.example.project',
-      targetFramework: schema.targetFramework || 'SPRING_BOOT',
-      openApiSupport: !!schema.openApiSupport,
-      generateTestStubs: !!schema.generateTestStubs,
-      flywayMigration: !!schema.flywayMigration,
+      targetFramework: framework,
+      enabledFeatures,
       nodes,
       edges,
       selectedEdgeId: null,
@@ -553,9 +576,11 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       projectName: state.projectName,
       basePackage: state.basePackage,
       targetFramework: state.targetFramework,
-      openApiSupport: state.openApiSupport,
-      generateTestStubs: state.generateTestStubs,
-      flywayMigration: state.flywayMigration,
+      enabledFeatures: state.enabledFeatures,
+      // Backward-compat booleans for older backend versions
+      openApiSupport: !!state.enabledFeatures['openApi'],
+      generateTestStubs: !!state.enabledFeatures['mockitoTests'],
+      flywayMigration: !!state.enabledFeatures['flywayMigration'],
       entities,
       relationships
     };

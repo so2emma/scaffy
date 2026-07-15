@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.List;
 
 @Component
 public class FastApiCodeGenerator implements CodeGenerator {
@@ -28,6 +29,40 @@ public class FastApiCodeGenerator implements CodeGenerator {
         this.freemarkerConfig.setLogTemplateExceptions(false);
         this.freemarkerConfig.setWrapUncheckedExceptions(true);
         this.freemarkerConfig.setFallbackOnNullLoopVariable(false);
+    }
+
+    @Override
+    public String getFrameworkId() {
+        return "FASTAPI";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "FastAPI";
+    }
+
+    @Override
+    public String getLanguage() {
+        return "Python";
+    }
+
+    @Override
+    public String getDescription() {
+        return "SQLAlchemy · Pydantic · Uvicorn";
+    }
+
+    @Override
+    public String getColor() {
+        return "#38bdf8";
+    }
+
+    @Override
+    public List<FeatureDescriptor> getAvailableFeatures() {
+        return List.of(
+                new FeatureDescriptor("openApi", "OpenAPI / Swagger Docs", "FastAPI built-in OpenAPI documentation", true),
+                new FeatureDescriptor("alembicMigrations", "Alembic Migrations", "Generates Alembic database migration scripts", false),
+                new FeatureDescriptor("pytestStubs", "Pytest Stubs", "Generates pytest-based test stubs for each router", false)
+        );
     }
 
     @Override

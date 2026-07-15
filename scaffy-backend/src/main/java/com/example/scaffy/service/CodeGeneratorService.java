@@ -1,6 +1,7 @@
 package com.example.scaffy.service;
 
 import com.example.scaffy.model.DiagramDto;
+import com.example.scaffy.model.FrameworkDescriptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,19 @@ public class CodeGeneratorService {
     @Autowired
     public CodeGeneratorService(List<CodeGenerator> generators) {
         this.generators = generators;
+    }
+
+    public List<FrameworkDescriptor> getAvailableFrameworks() {
+        return generators.stream()
+                .map(g -> new FrameworkDescriptor(
+                        g.getFrameworkId(),
+                        g.getDisplayName(),
+                        g.getLanguage(),
+                        g.getDescription(),
+                        g.getColor(),
+                        g.getAvailableFeatures()
+                ))
+                .toList();
     }
 
     public byte[] generateZip(DiagramDto diagram) throws Exception {

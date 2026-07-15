@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.List;
 
 @Service
 public class SpringBootCodeGenerator implements CodeGenerator {
@@ -28,6 +29,40 @@ public class SpringBootCodeGenerator implements CodeGenerator {
         this.freemarkerConfig.setLogTemplateExceptions(false);
         this.freemarkerConfig.setWrapUncheckedExceptions(true);
         this.freemarkerConfig.setFallbackOnNullLoopVariable(false);
+    }
+
+    @Override
+    public String getFrameworkId() {
+        return "SPRING_BOOT";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Spring Boot";
+    }
+
+    @Override
+    public String getLanguage() {
+        return "Java";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Maven · JPA · Hibernate";
+    }
+
+    @Override
+    public String getColor() {
+        return "#4ade80";
+    }
+
+    @Override
+    public List<FeatureDescriptor> getAvailableFeatures() {
+        return List.of(
+                new FeatureDescriptor("openApi", "OpenAPI / Swagger Docs", "Generates OpenAPI 3.0 documentation with Swagger UI", true),
+                new FeatureDescriptor("mockitoTests", "Mockito Unit Tests", "Generates service-layer unit tests using Mockito", false),
+                new FeatureDescriptor("flywayMigration", "Flyway Migration", "Generates versioned SQL migration scripts for Flyway", false)
+        );
     }
 
     @Override

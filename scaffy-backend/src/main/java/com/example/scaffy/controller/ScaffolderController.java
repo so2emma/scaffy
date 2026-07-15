@@ -1,6 +1,7 @@
 package com.example.scaffy.controller;
 
 import com.example.scaffy.model.DiagramDto;
+import com.example.scaffy.model.FrameworkDescriptor;
 import com.example.scaffy.model.ProjectPathDto;
 import com.example.scaffy.model.ValidationErrorDto;
 import com.example.scaffy.service.CodeGeneratorService;
@@ -23,6 +24,11 @@ public class ScaffolderController {
     private final ValidationService validationService;
     private final CodeGeneratorService codeGeneratorService;
     private final ReverseEngineeringService reverseEngineeringService;
+
+    @GetMapping("/frameworks")
+    public ResponseEntity<List<FrameworkDescriptor>> getFrameworks() {
+        return ResponseEntity.ok(codeGeneratorService.getAvailableFrameworks());
+    }
 
     @PostMapping("/validate")
     public ResponseEntity<List<ValidationErrorDto>> validateDiagram(@RequestBody DiagramDto diagram) {

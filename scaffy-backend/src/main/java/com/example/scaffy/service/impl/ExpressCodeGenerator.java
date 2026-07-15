@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.List;
 
 @Component
 public class ExpressCodeGenerator implements CodeGenerator {
@@ -28,6 +29,40 @@ public class ExpressCodeGenerator implements CodeGenerator {
         this.freemarkerConfig.setLogTemplateExceptions(false);
         this.freemarkerConfig.setWrapUncheckedExceptions(true);
         this.freemarkerConfig.setFallbackOnNullLoopVariable(false);
+    }
+
+    @Override
+    public String getFrameworkId() {
+        return "EXPRESS";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Express";
+    }
+
+    @Override
+    public String getLanguage() {
+        return "TypeScript";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Prisma · Node.js · TypeScript";
+    }
+
+    @Override
+    public String getColor() {
+        return "#facc15";
+    }
+
+    @Override
+    public List<FeatureDescriptor> getAvailableFeatures() {
+        return List.of(
+                new FeatureDescriptor("jestTests", "Jest Unit Tests", "Generates unit test stubs using Jest", false),
+                new FeatureDescriptor("swaggerJSDoc", "Swagger JSDoc", "Generates OpenAPI docs via swagger-jsdoc annotations", true),
+                new FeatureDescriptor("dockerFile", "Dockerfile", "Generates a production-ready Dockerfile", false)
+        );
     }
 
     @Override

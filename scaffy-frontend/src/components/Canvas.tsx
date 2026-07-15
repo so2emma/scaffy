@@ -13,6 +13,7 @@ import { Undo2, Redo2, Sparkles, Upload, Download, Image as ImageIcon, FileText,
 import { useDiagramStore } from '../store/useDiagramStore';
 import { EntityNode } from './EntityNode';
 import { toPng } from 'html-to-image';
+import { useToast } from '../hooks/useToast';
 import jsPDF from 'jspdf';
 
 const nodeTypes = {
@@ -43,6 +44,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport }) => {
 
   const { getNodes } = useReactFlow();
   const [isExporting, setIsExporting] = useState(false);
+  const { showToast } = useToast();
 
   const downloadImage = (dataUrl: string, filename: string) => {
     const a = document.createElement('a');
@@ -97,7 +99,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport }) => {
       }
     } catch (e) {
       console.error('Export failed', e);
-      alert('Failed to export diagram.');
+      showToast('Failed to export diagram.', 'error');
     } finally {
       setIsExporting(false);
     }

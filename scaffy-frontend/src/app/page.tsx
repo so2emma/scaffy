@@ -10,6 +10,7 @@ import { ImportModal } from '../components/ImportModal';
 import { RelationshipPanel } from '../components/RelationshipPanel';
 import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
 import { CodePreviewDrawer } from '../components/CodePreviewDrawer';
+import { useToast } from '../hooks/useToast';
 import { Database, Sun, Moon } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -30,6 +31,8 @@ function ScaffyAppContent() {
   const basePackage = useDiagramStore((state) => state.basePackage);
   const targetFramework = useDiagramStore((state) => state.targetFramework);
 
+  const { showToast } = useToast();
+
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -46,7 +49,7 @@ function ScaffyAppContent() {
         return;
       }
       runValidation();
-    }, 400); // Debounce check by 400ms
+    }, 400);
 
     return () => clearTimeout(delayDebounceFn);
   }, [nodes, edges, projectName, basePackage, targetFramework]);
@@ -76,7 +79,7 @@ function ScaffyAppContent() {
     // Run validation one final time
     const isValid = await runValidation();
     if (!isValid && validationErrors.length > 0) {
-      alert('Cannot generate scaffold. Please fix the validation errors first.');
+      showToast('Cannot generate scaffold. Please fix the validation errors first.', 'warning');
       return;
     }
 
@@ -93,7 +96,7 @@ function ScaffyAppContent() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        alert('Code generation failed: ' + errorText);
+        showToast('Code generation failed: ' + errorText, 'error');
         setIsGenerating(false);
         return;
       }
@@ -108,8 +111,9 @@ function ScaffyAppContent() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      showToast('Scaffold generated and downloaded successfully!', 'success');
     } catch (e) {
-      alert('Server connection error. Ensure the Spring Boot backend is running on port 8080.');
+      showToast('Server connection error. Ensure the Spring Boot backend is running on port 8080.', 'error');
       console.error(e);
     } finally {
       setIsGenerating(false);

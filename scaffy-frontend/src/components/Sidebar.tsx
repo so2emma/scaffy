@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDiagramStore } from '../store/useDiagramStore';
-import { Plus, Download, Save, FolderOpen, Database } from 'lucide-react';
+import { FRAMEWORK_FEATURES } from '../constants/frameworkFeatures';
+import { AVAILABLE_FRAMEWORKS, FrameworkSelectorModal } from './FrameworkSelectorModal';
+import { useToast } from '../hooks/useToast';
+import { Plus, Download, Upload, FileDown, Database, ChevronRight } from 'lucide-react';
 
 interface SidebarProps {
   onGenerate: () => void;
@@ -16,57 +19,113 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
   const targetFramework = useDiagramStore((state) => state.targetFramework);
   const setTargetFramework = useDiagramStore((state) => state.setTargetFramework);
 
-  const openApiSupport = useDiagramStore((state) => state.openApiSupport);
-  const setOpenApiSupport = useDiagramStore((state) => state.setOpenApiSupport);
-  
-  const generateTestStubs = useDiagramStore((state) => state.generateTestStubs);
-  const setGenerateTestStubs = useDiagramStore((state) => state.setGenerateTestStubs);
-
-  const flywayMigration = useDiagramStore((state) => state.flywayMigration);
-  const setFlywayMigration = useDiagramStore((state) => state.setFlywayMigration);
+  const enabledFeatures = useDiagramStore((state) => state.enabledFeatures);
+  const toggleFeature = useDiagramStore((state) => state.toggleFeature);
 
   const addEntity = useDiagramStore((state) => state.addEntity);
   const nodes = useDiagramStore((state) => state.nodes);
+  const edges = useDiagramStore((state) => state.edges);
 
-  // LocalStorage Save & Load
-  const handleSaveDiagram = () => {
+  const { showToast } = useToast();
+
+  const [isFrameworkModalOpen, setIsFrameworkModalOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved'>('saved');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const frameworkFeatures = FRAMEWORK_FEATURES[targetFramework] || [];
+  const currentFramework = AVAILABLE_FRAMEWORKS.find((fw) => fw.id === targetFramework);
+
+  // Auto-save with debounce
+  const performAutoSave = useCallback(() => {
     const storeState = useDiagramStore.getState();
     const dataToSave = {
       projectName: storeState.projectName,
       basePackage: storeState.basePackage,
       targetFramework: storeState.targetFramework,
-      openApiSupport: storeState.openApiSupport,
-      generateTestStubs: storeState.generateTestStubs,
-      flywayMigration: storeState.flywayMigration,
+      enabledFeatures: storeState.enabledFeatures,
       nodes: storeState.nodes,
-      edges: storeState.edges
+      edges: storeState.edges,
     };
-    localStorage.setItem('scaffy_diagram_save', JSON.stringify(dataToSave));
-    alert('Diagram saved successfully to local storage!');
+    try {
+      localStorage.setItem('scaffy_diagram_save', JSON.stringify(dataToSave));
+      setSaveStatus('saved');
+    } catch (e) {
+      console.error('Auto-save failed:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Mark as unsaved whenever relevant state changes
+    setSaveStatus('unsaved');
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+    saveTimerRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 1000);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [nodes, edges, projectName, basePackage, targetFramework, enabledFeatures, performAutoSave]);
+
+  // Export diagram as .scaffy.json file
+  const handleExport = () => {
+    try {
+      const storeState = useDiagramStore.getState();
+      const dataToExport = {
+        projectName: storeState.projectName,
+        basePackage: storeState.basePackage,
+        targetFramework: storeState.targetFramework,
+        enabledFeatures: storeState.enabledFeatures,
+        nodes: storeState.nodes,
+        edges: storeState.edges,
+      };
+      const json = JSON.stringify(dataToExport, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${storeState.projectName.toLowerCase().replace(/\s+/g, '-')}.scaffy.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Diagram exported successfully', 'success');
+    } catch (e) {
+      showToast('Failed to export diagram: ' + e, 'error');
+    }
   };
 
-  const handleLoadDiagram = () => {
-    const saved = localStorage.getItem('scaffy_diagram_save');
-    if (!saved) {
-      alert('No saved diagram found!');
-      return;
-    }
-    try {
-      const parsed = JSON.parse(saved);
-      useDiagramStore.setState({
-        projectName: parsed.projectName || 'MyProject',
-        basePackage: parsed.basePackage || 'com.example.project',
-        targetFramework: parsed.targetFramework || 'SPRING_BOOT',
-        openApiSupport: !!parsed.openApiSupport,
-        generateTestStubs: !!parsed.generateTestStubs,
-        flywayMigration: !!parsed.flywayMigration,
-        nodes: parsed.nodes || [],
-        edges: parsed.edges || []
-      });
-      alert('Diagram loaded successfully!');
-    } catch (e) {
-      alert('Failed to parse saved diagram: ' + e);
-    }
+  // Import diagram from JSON file
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsed = JSON.parse(content);
+        useDiagramStore.getState().importDiagram(parsed);
+        showToast('Diagram imported successfully', 'success');
+      } catch (err) {
+        showToast('Failed to parse diagram file: ' + err, 'error');
+      }
+    };
+    reader.onerror = () => {
+      showToast('Failed to read file', 'error');
+    };
+    reader.readAsText(file);
+
+    // Reset file input so the same file can be re-imported
+    e.target.value = '';
   };
 
   return (
@@ -100,193 +159,96 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
 
         <div className="sidebar-field">
           <label className="input-label" style={{ marginBottom: '8px', display: 'block' }}>Target Framework</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {[
-              { id: 'SPRING_BOOT', label: 'Spring Boot', desc: 'Java / Maven / JPA', color: '#4ade80' },
-              { id: 'EXPRESS', label: 'Express TS', desc: 'Node.js / Prisma', color: '#38bdf8' },
-              { id: 'FASTAPI', label: 'FastAPI', desc: 'Python / SQLAlchemy', color: '#fb923c' }
-            ].map((fw) => {
-              const active = targetFramework === fw.id;
-              return (
-                <button
-                  key={fw.id}
-                  onClick={() => setTargetFramework(fw.id)}
+          
+          {/* Active framework display card */}
+          {currentFramework && (
+            <div
+              className="sidebar-framework-card"
+              style={{
+                border: `1px solid ${currentFramework.color}`,
+                background: `rgba(${hexToRgb(currentFramework.color)}, 0.06)`,
+                boxShadow: `0 0 16px rgba(${hexToRgb(currentFramework.color)}, 0.1)`,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: active ? `1px solid ${fw.color}` : '1px solid var(--glass-border)',
-                    background: active 
-                      ? `rgba(${fw.id === 'SPRING_BOOT' ? '74, 222, 128' : fw.id === 'EXPRESS' ? '56, 189, 248' : '251, 146, 60'}, 0.08)` 
-                      : 'rgba(255,255,255,0.01)',
-                    cursor: 'pointer',
-                    width: '100%',
-                    textAlign: 'left',
-                    transition: 'all 0.2s ease',
-                    boxShadow: active 
-                      ? `0 0 12px rgba(${fw.id === 'SPRING_BOOT' ? '74, 222, 128' : fw.id === 'EXPRESS' ? '56, 189, 248' : '251, 146, 60'}, 0.12)` 
-                      : 'none'
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    background: currentFramework.color,
+                    flexShrink: 0,
+                  }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                    {currentFramework.displayName}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {currentFramework.description}
+                  </span>
+                </div>
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: '0.6rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: currentFramework.color,
+                    fontWeight: 700,
+                    background: `rgba(${hexToRgb(currentFramework.color)}, 0.12)`,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
-                    <span style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: fw.color
-                    }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                      {fw.label}
-                    </span>
-                    {active && (
-                      <span style={{
-                        marginLeft: 'auto',
-                        fontSize: '0.6rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: fw.color,
-                        fontWeight: 700
-                      }}>
-                        Active
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', marginLeft: '14px' }}>
-                    {fw.desc}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {currentFramework.language}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Change framework button */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => setIsFrameworkModalOpen(true)}
+            style={{ width: '100%', marginTop: '8px', justifyContent: 'space-between' }}
+          >
+            <span>Change Framework</span>
+            <ChevronRight size={14} />
+          </button>
         </div>
 
         <div style={{ borderTop: '1px solid var(--glass-border)', margin: '16px 0 0 0', padding: '16px 0 0 0' }}>
           <label className="section-label" style={{ marginBottom: '8px' }}>Generator Features</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* OpenAPI Feature */}
-            {(() => {
-              const isSupported = targetFramework === 'SPRING_BOOT' || targetFramework === 'FASTAPI';
-              return (
-                <label 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '8px', 
-                    fontSize: '0.8rem', 
-                    cursor: isSupported ? 'pointer' : 'not-allowed',
-                    opacity: isSupported ? 1 : 0.45,
-                    transition: 'opacity 0.2s'
+            {frameworkFeatures.map((feature) => (
+              <label
+                key={feature.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s'
+                }}
+                title={`Toggle ${feature.label}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!enabledFeatures[feature.id]}
+                  onChange={() => toggleFeature(feature.id)}
+                  style={{
+                    accentColor: 'var(--text-main)',
+                    width: '14px',
+                    height: '14px',
+                    marginTop: '2px',
+                    cursor: 'pointer'
                   }}
-                  title={!isSupported ? "OpenAPI documentation is not supported for Express scaffolding." : "Enable OpenAPI/Swagger Docs generation"}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSupported ? openApiSupport : false}
-                    disabled={!isSupported}
-                    onChange={(e) => setOpenApiSupport(e.target.checked)}
-                    style={{ 
-                      accentColor: 'var(--text-main)', 
-                      width: '14px', 
-                      height: '14px', 
-                      marginTop: '2px',
-                      cursor: isSupported ? 'pointer' : 'not-allowed' 
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span>OpenAPI / Swagger Docs</span>
-                    {!isSupported && (
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
-                        Not supported for Express
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })()}
-
-            {/* Mockito Tests Feature */}
-            {(() => {
-              const isSupported = targetFramework === 'SPRING_BOOT';
-              return (
-                <label 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '8px', 
-                    fontSize: '0.8rem', 
-                    cursor: isSupported ? 'pointer' : 'not-allowed',
-                    opacity: isSupported ? 1 : 0.45,
-                    transition: 'opacity 0.2s'
-                  }}
-                  title={!isSupported ? "Mockito service tests are Spring Boot specific." : "Enable Mockito Service Unit Tests generation"}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSupported ? generateTestStubs : false}
-                    disabled={!isSupported}
-                    onChange={(e) => setGenerateTestStubs(e.target.checked)}
-                    style={{ 
-                      accentColor: 'var(--text-main)', 
-                      width: '14px', 
-                      height: '14px', 
-                      marginTop: '2px',
-                      cursor: isSupported ? 'pointer' : 'not-allowed' 
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span>Mockito Service Unit Tests</span>
-                    {!isSupported && (
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
-                        Spring Boot only
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })()}
-
-            {/* Flyway SQL migrations Feature */}
-            {(() => {
-              const isSupported = targetFramework === 'SPRING_BOOT';
-              return (
-                <label 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    gap: '8px', 
-                    fontSize: '0.8rem', 
-                    cursor: isSupported ? 'pointer' : 'not-allowed',
-                    opacity: isSupported ? 1 : 0.45,
-                    transition: 'opacity 0.2s'
-                  }}
-                  title={!isSupported ? "Flyway SQL Migrations are Spring Boot specific." : "Enable Flyway SQL Migrations generation"}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isSupported ? flywayMigration : false}
-                    disabled={!isSupported}
-                    onChange={(e) => setFlywayMigration(e.target.checked)}
-                    style={{ 
-                      accentColor: 'var(--text-main)', 
-                      width: '14px', 
-                      height: '14px', 
-                      marginTop: '2px',
-                      cursor: isSupported ? 'pointer' : 'not-allowed' 
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span>Flyway SQL Migrations</span>
-                    {!isSupported && (
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
-                        Spring Boot only
-                      </span>
-                    )}
-                  </div>
-                </label>
-              );
-            })()}
+                />
+                <span>{feature.label}</span>
+              </label>
+            ))}
           </div>
         </div>
       </div>
@@ -303,15 +265,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
       </div>
 
       <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
-        <label className="section-label">State Management</label>
+        <label className="section-label">Diagram File</label>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={handleSaveDiagram} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
-            <Save size={14} /> Save
+          <button className="btn btn-secondary" onClick={handleExport} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
+            <FileDown size={14} /> Export
           </button>
-          <button className="btn btn-secondary" onClick={handleLoadDiagram} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
-            <FolderOpen size={14} /> Load
+          <button className="btn btn-secondary" onClick={handleImport} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
+            <Upload size={14} /> Import
           </button>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json,.scaffy.json"
+          onChange={handleFileSelected}
+          style={{ display: 'none' }}
+        />
       </div>
 
       <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
@@ -335,7 +304,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px', marginTop: 'auto' }}>
+      {/* Auto-save indicator + Generate button */}
+      <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '12px', marginTop: 'auto' }}>
+        {/* Save status indicator */}
+        <div className={`autosave-indicator ${saveStatus}`} style={{ marginBottom: '10px' }}>
+          <span className="autosave-dot" />
+          <span className="autosave-text">
+            {saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}
+          </span>
+        </div>
+
         <button
           className="btn btn-primary"
           style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
@@ -346,10 +324,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
           {isGenerating ? 'Generating...' : 'Generate Backend Scaffold'}
         </button>
       </div>
+
+      {/* Framework Selector Modal */}
+      <FrameworkSelectorModal
+        isOpen={isFrameworkModalOpen}
+        onClose={() => setIsFrameworkModalOpen(false)}
+        selectedFramework={targetFramework}
+        onSelect={setTargetFramework}
+      />
     </div>
   );
 };
 
-// Quick fix for inline javascript CSS variable interpolation fallback
-const varColor = (name: string) => `var(${name})`;
-const varColorPrimary = varColor('--primary');
+function hexToRgb(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return '255, 255, 255';
+  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+}

@@ -3,14 +3,15 @@ import { useDiagramStore } from '../store/useDiagramStore';
 import { FRAMEWORK_FEATURES } from '../constants/frameworkFeatures';
 import { AVAILABLE_FRAMEWORKS, FrameworkSelectorModal } from './FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
-import { Plus, Download, Upload, FileDown, Database, ChevronRight } from 'lucide-react';
+import { Plus, Download, Upload, FileDown, Database, ChevronRight, LayoutTemplate } from 'lucide-react';
 
 interface SidebarProps {
   onGenerate: () => void;
   isGenerating: boolean;
+  onOpenTemplates: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOpenTemplates }) => {
   const projectName = useDiagramStore((state) => state.projectName);
   const setProjectName = useDiagramStore((state) => state.setProjectName);
   
@@ -255,6 +256,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating }) =>
 
       <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
         <label className="section-label">Canvas Controls</label>
+        <button 
+          className="btn btn-secondary" 
+          onClick={onOpenTemplates}
+          style={{ width: '100%', marginBottom: '8px' }}
+        >
+          <LayoutTemplate size={16} /> Start from Template
+        </button>
         <button 
           className="btn btn-secondary" 
           onClick={() => addEntity('NewEntity', 100, 100)}

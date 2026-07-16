@@ -3,9 +3,11 @@ package com.example.scaffy.controller;
 import com.example.scaffy.model.DiagramDto;
 import com.example.scaffy.model.FrameworkDescriptor;
 import com.example.scaffy.model.ProjectPathDto;
+import com.example.scaffy.model.TemplateDescriptor;
 import com.example.scaffy.model.ValidationErrorDto;
 import com.example.scaffy.service.CodeGeneratorService;
 import com.example.scaffy.service.ReverseEngineeringService;
+import com.example.scaffy.service.TemplateService;
 import com.example.scaffy.service.ValidationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +26,7 @@ public class ScaffolderController {
     private final ValidationService validationService;
     private final CodeGeneratorService codeGeneratorService;
     private final ReverseEngineeringService reverseEngineeringService;
+    private final TemplateService templateService;
 
     @GetMapping("/frameworks")
     public ResponseEntity<List<FrameworkDescriptor>> getFrameworks() {
@@ -84,5 +87,19 @@ public class ScaffolderController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to scan project: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/templates")
+    public ResponseEntity<List<TemplateDescriptor>> getTemplates() {
+        return ResponseEntity.ok(templateService.getAvailableTemplates());
+    }
+
+    @GetMapping("/templates/{id}")
+    public ResponseEntity<?> getTemplateDiagram(@PathVariable String id) {
+        DiagramDto diagram = templateService.getTemplateDiagram(id);
+        if (diagram == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(diagram);
     }
 }

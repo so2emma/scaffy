@@ -169,6 +169,24 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       if (tab === 'Router') return `${projNameSnake}/app/routers/${entitySnake}.py`;
       if (tab === 'Main App') return `${projNameSnake}/app/main.py`;
       if (tab === 'Database Config') return `${projNameSnake}/app/database.py`;
+    } else if (targetFramework === 'NESTJS') {
+      const entityKebab = entityName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      if (tab === 'Entity') return `${projNameSnake}/src/${entityKebab}/entities/${entityKebab}.entity.ts`;
+      if (tab === 'Create DTO') return `${projNameSnake}/src/${entityKebab}/dto/create-${entityKebab}.dto.ts`;
+      if (tab === 'Update DTO') return `${projNameSnake}/src/${entityKebab}/dto/update-${entityKebab}.dto.ts`;
+      if (tab === 'Service') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.ts`;
+      if (tab === 'Controller') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.controller.ts`;
+      if (tab === 'Module') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.module.ts`;
+      if (tab === 'App Module') return `${projNameSnake}/src/app.module.ts`;
+      if (tab === 'Unit Test') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.spec.ts`;
+    } else if (targetFramework === 'DJANGO_REST') {
+      if (tab === 'Models') return `${projNameSnake}/api/models.py`;
+      if (tab === 'Serializers') return `${projNameSnake}/api/serializers.py`;
+      if (tab === 'Views') return `${projNameSnake}/api/views.py`;
+      if (tab === 'URLs') return `${projNameSnake}/api/urls.py`;
+      if (tab === 'Admin') return `${projNameSnake}/api/admin.py`;
+      if (tab === 'Settings') return `${projNameSnake}/${projNameSnake}/settings.py`;
+      if (tab === 'Tests') return `${projNameSnake}/api/tests.py`;
     }
 
     return `${projNameSnake}/${tab}`;
@@ -279,7 +297,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     if (activeTab === 'Flyway SQL') return 'sql';
     if (activeTab === 'Prisma Schema') return 'prisma';
     if (targetFramework === 'EXPRESS') return 'typescript';
+    if (targetFramework === 'NESTJS') return 'typescript';
     if (targetFramework === 'FASTAPI') return 'python';
+    if (targetFramework === 'DJANGO_REST') return 'python';
     return 'java';
   };
 
@@ -317,7 +337,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
             Preview — <strong>{entityName}</strong>
           </span>
           <span className={`code-preview__badge code-preview__badge--${targetFramework.toLowerCase()}`}>
-            {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express' : 'FastAPI'}
+            {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express' : targetFramework === 'NESTJS' ? 'NestJS' : targetFramework === 'DJANGO_REST' ? 'Django REST' : 'FastAPI'}
           </span>
           {isLoading && <RefreshCw size={11} className="animate-spin" />}
         </div>

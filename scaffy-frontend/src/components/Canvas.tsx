@@ -9,7 +9,7 @@ import {
   getViewportForBounds
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Undo2, Redo2, Sparkles, Upload, Download, Image as ImageIcon, FileText, Loader2 } from 'lucide-react';
+import { Undo2, Redo2, Sparkles, Upload, Download, Image as ImageIcon, FileText, Loader2, LayoutTemplate } from 'lucide-react';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { EntityNode } from './EntityNode';
 import { toPng } from 'html-to-image';
@@ -22,9 +22,10 @@ const nodeTypes = {
 
 interface CanvasProps {
   onOpenImport: () => void;
+  onOpenTemplates: () => void;
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ onOpenImport }) => {
+export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates }) => {
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
   const onNodesChange = useDiagramStore((state) => state.onNodesChange);
@@ -314,6 +315,50 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport }) => {
             color: 'var(--text-primary)'
           }} 
         />
+        
+        {/* Empty State Prompt */}
+        {nodes.length === 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+              zIndex: 5,
+              pointerEvents: 'none'
+            }}
+          >
+            <div
+              style={{
+                background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '16px',
+                padding: '32px 40px',
+                boxShadow: 'var(--glass-glow)',
+                pointerEvents: 'all'
+              }}
+            >
+              <div style={{ marginBottom: '16px' }}>
+                <LayoutTemplate size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                Start from scratch or choose a template
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                Get started quickly with pre-built entity patterns
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={onOpenTemplates}
+                style={{ padding: '10px 20px' }}
+              >
+                <LayoutTemplate size={18} />
+                Browse Templates
+              </button>
+            </div>
+          </div>
+        )}
       </ReactFlow>
     </div>
   );

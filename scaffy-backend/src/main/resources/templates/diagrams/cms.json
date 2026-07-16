@@ -1,0 +1,439 @@
+{
+  "id": "cms",
+  "name": "Content Management System",
+  "description": "CMS with articles, categories, tags, comments, and media management",
+  "category": "Content",
+  "icon": "FileText",
+  "entityCount": 10,
+  "diagram": {
+    "projectName": "my-cms",
+    "basePackage": "com.example",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "User",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "username",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "email",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "password",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "role",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "active",
+            "type": "Boolean",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Article",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "title",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "excerpt",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "version",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "publishedAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          },
+          {
+            "name": "updatedAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Category",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "parentId",
+            "type": "Long",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Tag",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          }
+        ]
+      },
+      {
+        "id": "articleTag",
+        "name": "ArticleTag",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          }
+        ]
+      },
+      {
+        "name": "Comment",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "approved",
+            "type": "Boolean",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Media",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "filename",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "url",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "mimeType",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "size",
+            "type": "Long",
+            "nullable": false
+          },
+          {
+            "name": "altText",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "uploadedAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Page",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "title",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "template",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Menu",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "location",
+            "type": "String",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "id": "menuItem",
+        "name": "MenuItem",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "label",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "url",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "order",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "parentId",
+            "type": "Long",
+            "nullable": true
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "User",
+        "to": "Article",
+        "type": "ONE_TO_MANY",
+        "fromField": "articles",
+        "toField": "author",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Article",
+        "to": "Category",
+        "type": "MANY_TO_ONE",
+        "fromField": "category",
+        "toField": "articles",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Article",
+        "to": "ArticleTag",
+        "type": "ONE_TO_MANY",
+        "fromField": "articleTags",
+        "toField": "article",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "ArticleTag",
+        "to": "Tag",
+        "type": "MANY_TO_ONE",
+        "fromField": "tag",
+        "toField": "articleTags",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Article",
+        "to": "Comment",
+        "type": "ONE_TO_MANY",
+        "fromField": "comments",
+        "toField": "article",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Comment",
+        "type": "ONE_TO_MANY",
+        "fromField": "comments",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Article",
+        "to": "Media",
+        "type": "ONE_TO_MANY",
+        "fromField": "media",
+        "toField": "article",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Menu",
+        "to": "MenuItem",
+        "type": "ONE_TO_MANY",
+        "fromField": "items",
+        "toField": "menu",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      }
+    ]
+  }
+}

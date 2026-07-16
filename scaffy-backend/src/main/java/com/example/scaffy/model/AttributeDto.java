@@ -12,9 +12,9 @@ public class AttributeDto {
     private String name;
     private String type; // String, Integer, Long, UUID, Boolean, LocalDate, LocalDateTime, BigDecimal, Enum
     private List<String> enumValues; // Optional: enum values if type is Enum
-    private boolean primaryKey;
-    private boolean nullable;
-    private boolean unique;
+    private Boolean primaryKey; // Changed to Boolean wrapper to avoid default false
+    private Boolean nullable; // Changed to Boolean wrapper
+    private Boolean unique; // Changed to Boolean wrapper
     private String defaultValue;
     private ValidationConfigDto validation;
 
@@ -28,5 +28,18 @@ public class AttributeDto {
         this.unique = unique;
         this.defaultValue = defaultValue;
         this.validation = null;
+    }
+    
+    // Convenience methods that handle null safely
+    public boolean isPrimaryKey() {
+        return Boolean.TRUE.equals(primaryKey);
+    }
+    
+    public boolean isNullable() {
+        return !Boolean.FALSE.equals(nullable); // Default to true if null
+    }
+    
+    public boolean isUnique() {
+        return Boolean.TRUE.equals(unique);
     }
 }

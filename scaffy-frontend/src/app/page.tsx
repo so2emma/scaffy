@@ -10,6 +10,7 @@ import { ImportModal } from '../components/ImportModal';
 import { RelationshipPanel } from '../components/RelationshipPanel';
 import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
 import { CodePreviewDrawer } from '../components/CodePreviewDrawer';
+import { TemplateGalleryModal } from '../components/TemplateGalleryModal';
 import { useToast } from '../hooks/useToast';
 import { Database, Sun, Moon } from 'lucide-react';
 
@@ -36,6 +37,7 @@ function ScaffyAppContent() {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
 
   // Compute selected entity name based on node selection in React Flow
   const selectedNode = nodes.find((n) => n.selected);
@@ -199,17 +201,28 @@ function ScaffyAppContent() {
       {/* Main workspace */}
       <div className="main-content">
         {/* Left Project Sidebar */}
-        <Sidebar onGenerate={handleGenerate} isGenerating={isGenerating} />
+        <Sidebar 
+          onGenerate={handleGenerate} 
+          isGenerating={isGenerating}
+          onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
+        />
 
         {/* Center Canvas & Code Preview Split */}
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', overflow: 'hidden' }}>
           <ReactFlowProvider>
-            <Canvas onOpenImport={() => setIsImportOpen(true)} />
+            <Canvas 
+              onOpenImport={() => setIsImportOpen(true)}
+              onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
+            />
           </ReactFlowProvider>
           {selectedEntityName && <CodePreviewDrawer entityName={selectedEntityName} />}
         </div>
         
         <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+        <TemplateGalleryModal 
+          isOpen={isTemplateGalleryOpen}
+          onClose={() => setIsTemplateGalleryOpen(false)}
+        />
 
         {/* Right Relationship Config Panel */}
         <RelationshipPanel />

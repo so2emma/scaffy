@@ -1,0 +1,446 @@
+{
+  "id": "ecommerce",
+  "name": "E-Commerce",
+  "description": "Complete online store with products, orders, payments, and reviews",
+  "category": "Commerce",
+  "icon": "ShoppingCart",
+  "entityCount": 9,
+  "diagram": {
+    "projectName": "my-ecommerce",
+    "basePackage": "com.example",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "User",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "email",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "password",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "firstName",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "lastName",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "phone",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Product",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "price",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "sku",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "stock",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "active",
+            "type": "Boolean",
+            "nullable": false
+          },
+          {
+            "name": "imageUrl",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Category",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          }
+        ]
+      },
+      {
+        "name": "Order",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "orderNumber",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "totalAmount",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          },
+          {
+            "name": "updatedAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "id": "orderItem",
+        "name": "OrderItem",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "quantity",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "unitPrice",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "subtotal",
+            "type": "BigDecimal",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Payment",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "paymentMethod",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "amount",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "transactionId",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "paidAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Address",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "street",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "city",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "state",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "zipCode",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "country",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "isDefault",
+            "type": "Boolean",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Review",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "rating",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "comment",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "id": "cartItem",
+        "name": "CartItem",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "quantity",
+            "type": "Integer",
+            "nullable": false
+          },
+          {
+            "name": "addedAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "User",
+        "to": "Order",
+        "type": "ONE_TO_MANY",
+        "fromField": "orders",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Order",
+        "to": "OrderItem",
+        "type": "ONE_TO_MANY",
+        "fromField": "items",
+        "toField": "order",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "OrderItem",
+        "to": "Product",
+        "type": "MANY_TO_ONE",
+        "fromField": "product",
+        "toField": "orderItems",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Product",
+        "to": "Category",
+        "type": "MANY_TO_ONE",
+        "fromField": "category",
+        "toField": "products",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Order",
+        "to": "Payment",
+        "type": "ONE_TO_ONE",
+        "fromField": "payment",
+        "toField": "order",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Address",
+        "type": "ONE_TO_MANY",
+        "fromField": "addresses",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Review",
+        "type": "ONE_TO_MANY",
+        "fromField": "reviews",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Review",
+        "to": "Product",
+        "type": "MANY_TO_ONE",
+        "fromField": "product",
+        "toField": "reviews",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "CartItem",
+        "type": "ONE_TO_MANY",
+        "fromField": "cartItems",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "CartItem",
+        "to": "Product",
+        "type": "MANY_TO_ONE",
+        "fromField": "product",
+        "toField": "cartItems",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      }
+    ]
+  }
+}

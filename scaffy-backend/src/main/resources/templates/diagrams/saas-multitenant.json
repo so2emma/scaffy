@@ -1,0 +1,427 @@
+{
+  "id": "saas-multitenant",
+  "name": "SaaS Multi-Tenant",
+  "description": "Multi-tenant SaaS platform with subscriptions, roles, and audit logs",
+  "category": "Platform",
+  "icon": "Building2",
+  "entityCount": 9,
+  "diagram": {
+    "projectName": "my-saas-platform",
+    "basePackage": "com.example",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "Tenant",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "slug",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "domain",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "User",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "tenantId",
+            "type": "Long",
+            "nullable": false
+          },
+          {
+            "name": "email",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "password",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "firstName",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "lastName",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "active",
+            "type": "Boolean",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Role",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "isSystemRole",
+            "type": "Boolean",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Permission",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "resource",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "action",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "id": "rolePermission",
+        "name": "RolePermission",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          }
+        ]
+      },
+      {
+        "name": "Subscription",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "startDate",
+            "type": "LocalDateTime",
+            "nullable": false
+          },
+          {
+            "name": "endDate",
+            "type": "LocalDateTime",
+            "nullable": true
+          },
+          {
+            "name": "autoRenew",
+            "type": "Boolean",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Plan",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "description",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "price",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "billingPeriod",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "maxUsers",
+            "type": "Integer",
+            "nullable": true
+          },
+          {
+            "name": "features",
+            "type": "String",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Invoice",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "invoiceNumber",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "amount",
+            "type": "BigDecimal",
+            "nullable": false
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "dueDate",
+            "type": "LocalDateTime",
+            "nullable": false
+          },
+          {
+            "name": "paidAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "id": "auditLog",
+        "name": "AuditLog",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "tenantId",
+            "type": "Long",
+            "nullable": false
+          },
+          {
+            "name": "userId",
+            "type": "Long",
+            "nullable": true
+          },
+          {
+            "name": "action",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "resource",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "resourceId",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "ipAddress",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "timestamp",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Tenant",
+        "to": "User",
+        "type": "ONE_TO_MANY",
+        "fromField": "users",
+        "toField": "tenant",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Role",
+        "type": "MANY_TO_ONE",
+        "fromField": "role",
+        "toField": "users",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Role",
+        "to": "RolePermission",
+        "type": "ONE_TO_MANY",
+        "fromField": "rolePermissions",
+        "toField": "role",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "RolePermission",
+        "to": "Permission",
+        "type": "MANY_TO_ONE",
+        "fromField": "permission",
+        "toField": "rolePermissions",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Tenant",
+        "to": "Subscription",
+        "type": "ONE_TO_ONE",
+        "fromField": "subscription",
+        "toField": "tenant",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Subscription",
+        "to": "Plan",
+        "type": "MANY_TO_ONE",
+        "fromField": "plan",
+        "toField": "subscriptions",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Tenant",
+        "to": "Invoice",
+        "type": "ONE_TO_MANY",
+        "fromField": "invoices",
+        "toField": "tenant",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Tenant",
+        "to": "AuditLog",
+        "type": "ONE_TO_MANY",
+        "fromField": "auditLogs",
+        "toField": "tenant",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      }
+    ]
+  }
+}

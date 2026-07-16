@@ -1,0 +1,401 @@
+{
+  "id": "social-network",
+  "name": "Social Network",
+  "description": "Social platform with posts, comments, likes, messages, and friendships",
+  "category": "Social",
+  "icon": "Users",
+  "entityCount": 10,
+  "diagram": {
+    "projectName": "my-social-network",
+    "basePackage": "com.example",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "User",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "username",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "email",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          },
+          {
+            "name": "password",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Profile",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "bio",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "avatarUrl",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "coverPhotoUrl",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "location",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "website",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "birthDate",
+            "type": "LocalDate",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Post",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "imageUrl",
+            "type": "String",
+            "nullable": true
+          },
+          {
+            "name": "visibility",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          },
+          {
+            "name": "updatedAt",
+            "type": "LocalDateTime",
+            "nullable": true
+          }
+        ]
+      },
+      {
+        "name": "Comment",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Like",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Friendship",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "userId1",
+            "type": "Long",
+            "nullable": false
+          },
+          {
+            "name": "userId2",
+            "type": "Long",
+            "nullable": false
+          },
+          {
+            "name": "status",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Message",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "content",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "read",
+            "type": "Boolean",
+            "nullable": false
+          },
+          {
+            "name": "sentAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Notification",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "type",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "message",
+            "type": "String",
+            "nullable": false
+          },
+          {
+            "name": "read",
+            "type": "Boolean",
+            "nullable": false
+          },
+          {
+            "name": "createdAt",
+            "type": "LocalDateTime",
+            "nullable": false
+          }
+        ]
+      },
+      {
+        "name": "Tag",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          },
+          {
+            "name": "name",
+            "type": "String",
+            "nullable": false,
+            "unique": true
+          }
+        ]
+      },
+      {
+        "id": "postTag",
+        "name": "PostTag",
+        "attributes": [
+          {
+            "name": "id",
+            "type": "Long",
+            "nullable": false,
+            "primaryKey": true,
+            "unique": true
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "User",
+        "to": "Profile",
+        "type": "ONE_TO_ONE",
+        "fromField": "profile",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Post",
+        "type": "ONE_TO_MANY",
+        "fromField": "posts",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "Post",
+        "to": "Comment",
+        "type": "ONE_TO_MANY",
+        "fromField": "comments",
+        "toField": "post",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Comment",
+        "type": "ONE_TO_MANY",
+        "fromField": "comments",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Like",
+        "type": "ONE_TO_MANY",
+        "fromField": "likes",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "Post",
+        "to": "Like",
+        "type": "ONE_TO_MANY",
+        "fromField": "likes",
+        "toField": "post",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Message",
+        "type": "ONE_TO_MANY",
+        "fromField": "sentMessages",
+        "toField": "sender",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      },
+      {
+        "from": "User",
+        "to": "Notification",
+        "type": "ONE_TO_MANY",
+        "fromField": "notifications",
+        "toField": "user",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "Post",
+        "to": "PostTag",
+        "type": "ONE_TO_MANY",
+        "fromField": "postTags",
+        "toField": "post",
+        "fromNullable": false,
+        "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"],
+        "joinTable": null
+      },
+      {
+        "from": "PostTag",
+        "to": "Tag",
+        "type": "MANY_TO_ONE",
+        "fromField": "tag",
+        "toField": "postTags",
+        "fromNullable": false,
+        "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"],
+        "joinTable": null
+      }
+    ]
+  }
+}

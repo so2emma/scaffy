@@ -76,12 +76,10 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
       if (!groups[fw.language]) groups[fw.language] = [];
       groups[fw.language].push(fw);
     }
-    // Sort by predefined language order
     const sorted: [string, FrameworkOption[]][] = [];
     for (const lang of LANGUAGE_ORDER) {
       if (groups[lang]) sorted.push([lang, groups[lang]]);
     }
-    // Add any languages not in the predefined order
     for (const lang of Object.keys(groups)) {
       if (!LANGUAGE_ORDER.includes(lang)) sorted.push([lang, groups[lang]]);
     }
@@ -94,9 +92,7 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();
   };
 
   useEffect(() => {
@@ -111,61 +107,80 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
 
   return (
     <div
-      className={`framework-modal-overlay ${animating ? 'open' : ''}`}
+      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200 ${
+        animating ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/0'
+      }`}
       onClick={handleBackdropClick}
     >
-      <div className={`framework-modal ${animating ? 'open' : ''}`}>
-        {/* Header */}
-        <div className="framework-modal-header">
-          <h2 className="framework-modal-title">Select Framework</h2>
-          <button className="framework-modal-close" onClick={onClose} aria-label="Close">
+      <div
+        className={`flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all duration-200 ${
+          animating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+      >
+        <div className="flex items-center justify-between px-6 pt-5">
+          <h2 className="font-display text-lg font-semibold">Select Framework</h2>
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            onClick={onClose}
+            aria-label="Close"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Search */}
-        <div className="framework-modal-search">
-          <Search size={16} className="framework-modal-search-icon" />
+        <div className="relative px-6 py-4">
+          <Search size={16} className="pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-subtle" />
           <input
             ref={searchRef}
             type="text"
             placeholder="Search frameworks by name, language, or stack..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="framework-modal-search-input"
+            className="input !pl-10"
           />
         </div>
 
-        {/* Content */}
-        <div className="framework-modal-content">
+        <div className="scroll-thin flex-1 overflow-y-auto px-6 pb-6">
           {grouped.length === 0 ? (
-            <div className="framework-modal-empty">
+            <div className="py-16 text-center text-sm text-muted">
               No frameworks match &ldquo;{search}&rdquo;
             </div>
           ) : (
             grouped.map(([language, fws]) => (
-              <div key={language} className="framework-modal-group">
-                <h3 className="framework-modal-group-title">{language}</h3>
-                <div className="framework-modal-grid">
+              <div key={language} className="mb-5 last:mb-0">
+                <h3 className="section-label mb-2.5">{language}</h3>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] gap-2.5">
                   {fws.map((fw) => {
                     const isActive = selectedFramework === fw.id;
                     return (
                       <button
                         key={fw.id}
-                        className={`framework-card ${isActive ? 'active' : ''}`}
+                        className="group relative flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
                         onClick={() => handleSelect(fw.id)}
                         style={{
-                          '--fw-color': fw.color,
-                          '--fw-color-rgb': hexToRgb(fw.color),
-                        } as React.CSSProperties}
+                          borderColor: isActive ? fw.color : 'var(--c-border)',
+                          background: isActive
+                            ? `color-mix(in srgb, ${fw.color} 7%, transparent)`
+                            : 'var(--c-surface)',
+                        }}
                       >
-                        <div className="framework-card-top">
-                          <span className="framework-card-dot" />
-                          <span className="framework-card-name">{fw.displayName}</span>
-                          {isActive && <span className="framework-card-badge">Active</span>}
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: fw.color }} />
+                          <span className="text-sm font-semibold text-content">{fw.displayName}</span>
+                          {isActive && (
+                            <span
+                              className="ml-auto rounded px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-wider"
+                              style={{
+                                color: fw.color,
+                                background: `color-mix(in srgb, ${fw.color} 14%, transparent)`,
+                              }}
+                            >
+                              Active
+                            </span>
+                          )}
                         </div>
-                        <span className="framework-card-desc">{fw.description}</span>
-                        <span className="framework-card-lang">{fw.language}</span>
+                        <span className="pl-[1.1rem] text-xs text-muted">{fw.description}</span>
+                        <span className="pl-[1.1rem] text-[0.65rem] text-subtle">{fw.language}</span>
                       </button>
                     );
                   })}
@@ -178,9 +193,3 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
     </div>
   );
 };
-
-function hexToRgb(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '255, 255, 255';
-  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-}

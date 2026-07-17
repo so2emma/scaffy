@@ -10,13 +10,10 @@ interface ImportModalProps {
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => {
   const importDiagram = useDiagramStore((state) => state.importDiagram);
   const [activeTab, setActiveTab] = useState<'ddl' | 'springboot'>('ddl');
-  
-  // DDL states
+
   const [ddlText, setDdlText] = useState('');
-  
-  // Spring Boot states
   const [projectPath, setProjectPath] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -27,24 +24,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
       setErrorMsg('Please paste SQL DDL statements first.');
       return;
     }
-    
     setIsLoading(true);
     setErrorMsg(null);
-    
     try {
       const response = await fetch('http://localhost:8080/api/scaffold/reverse-engineer/ddl', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
+        headers: { 'Content-Type': 'text/plain' },
         body: ddlText,
       });
-
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || 'Failed to parse DDL script.');
       }
-
       const schema = await response.json();
       importDiagram(schema);
       onClose();
@@ -60,24 +51,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
       setErrorMsg('Please specify an absolute Spring Boot folder path.');
       return;
     }
-
     setIsLoading(true);
     setErrorMsg(null);
-
     try {
       const response = await fetch('http://localhost:8080/api/scaffold/reverse-engineer/spring-boot', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectPath }),
       });
-
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || 'Failed to scan Spring Boot directory.');
       }
-
       const schema = await response.json();
       importDiagram(schema);
       onClose();
@@ -91,112 +76,54 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = (event) => {
-      setDdlText(event.target?.result as string || '');
-    };
+    reader.onload = (event) => setDdlText((event.target?.result as string) || '');
     reader.readAsText(file);
   };
 
+  const tabClass = (active: boolean) =>
+    `flex flex-1 items-center justify-center gap-2 border-b-2 py-3 text-sm transition-colors ${
+      active
+        ? 'border-primary font-semibold text-content'
+        : 'border-transparent font-medium text-muted hover:text-content'
+    }`;
+
   return (
-    <div 
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.65)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px'
-      }}
-    >
-      <div 
-        style={{
-          width: '540px',
-          background: 'var(--glass-bg)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '12px',
-          boxShadow: 'var(--glass-glow)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
-      >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
         {/* Header */}
-        <div 
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--glass-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Upload size={18} style={{ color: 'var(--text-secondary)' }} />
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-              Reverse Engineer / Import
-            </span>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <Upload size={18} className="text-muted" />
+            <span className="font-display text-lg font-semibold">Reverse Engineer / Import</span>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            className="rounded-md p-1 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div 
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--glass-border)',
-            background: 'rgba(120, 120, 120, 0.02)'
-          }}
-        >
+        <div className="flex border-b border-border bg-surface-2">
           <button
-            onClick={() => { setActiveTab('ddl'); setErrorMsg(null); }}
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'ddl' ? '2px solid var(--text-primary)' : '2px solid transparent',
-              color: activeTab === 'ddl' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontFamily: 'var(--font-sans)',
-              fontWeight: activeTab === 'ddl' ? 600 : 500,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+            onClick={() => {
+              setActiveTab('ddl');
+              setErrorMsg(null);
             }}
+            className={tabClass(activeTab === 'ddl')}
           >
             <Database size={14} />
             SQL DDL Schema
           </button>
           <button
-            onClick={() => { setActiveTab('springboot'); setErrorMsg(null); }}
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: activeTab === 'springboot' ? '2px solid var(--text-primary)' : '2px solid transparent',
-              color: activeTab === 'springboot' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontFamily: 'var(--font-sans)',
-              fontWeight: activeTab === 'springboot' ? 600 : 500,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
+            onClick={() => {
+              setActiveTab('springboot');
+              setErrorMsg(null);
             }}
+            className={tabClass(activeTab === 'springboot')}
           >
             <FolderOpen size={14} />
             Spring Boot Repository
@@ -204,88 +131,51 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
+        <div className="flex flex-col gap-4 p-5">
           {errorMsg && (
-            <div 
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid var(--accent-red)',
-                borderRadius: '6px',
-                padding: '10px 12px',
-                fontSize: '0.75rem',
-                color: 'var(--accent-red)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '8px'
-              }}
-            >
-              <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2.5 text-xs text-danger">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <div>{errorMsg}</div>
             </div>
           )}
 
           {activeTab === 'ddl' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm text-muted">
                   Paste SQL table declarations below or load a `.sql` file:
                 </span>
-                <label 
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--text-primary)',
-                    background: 'rgba(120, 120, 120, 0.08)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: '1px solid var(--glass-border)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                >
+                <label className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-content transition-colors hover:bg-surface-3">
                   <Upload size={12} />
                   Choose File
-                  <input type="file" accept=".sql" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  <input type="file" accept=".sql" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
 
               <textarea
                 value={ddlText}
                 onChange={(e) => setDdlText(e.target.value)}
-                placeholder="CREATE TABLE users (&#10;    id BIGINT PRIMARY KEY,&#10;    email VARCHAR(255) NOT NULL UNIQUE&#10;);"
-                style={{
-                  height: '180px',
-                  background: 'rgba(120,120,120,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '6px',
-                  color: 'var(--text-primary)',
-                  fontFamily: 'monospace',
-                  fontSize: '0.75rem',
-                  padding: '10px',
-                  resize: 'none',
-                  outline: 'none'
-                }}
+                placeholder={
+                  'CREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    email VARCHAR(255) NOT NULL UNIQUE\n);'
+                }
+                className="scroll-thin h-44 resize-none rounded-lg border border-border bg-surface-2 p-2.5 font-mono text-xs text-content outline-none focus:border-primary focus:ring-2 focus:ring-primary/25"
               />
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Provide the absolute path to an existing Spring Boot Maven project folder. The scanner will look for all Java Entity classes and reconstruct the layout:
+            <div className="flex flex-col gap-3">
+              <span className="text-sm text-muted">
+                Provide the absolute path to an existing Spring Boot Maven project folder. The scanner will
+                look for all Java Entity classes and reconstruct the layout:
               </span>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
-                  Local Project Directory Path
-                </label>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="field-label">Local Project Directory Path</label>
                 <input
                   type="text"
                   value={projectPath}
                   onChange={(e) => setProjectPath(e.target.value)}
                   placeholder="/Users/username/IdeaProjects/my-spring-app"
-                  className="text-input"
-                  style={{ width: '100%' }}
+                  className="input"
                 />
               </div>
             </div>
@@ -293,36 +183,16 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Footer */}
-        <div 
-          style={{
-            padding: '14px 20px',
-            borderTop: '1px solid var(--glass-border)',
-            background: 'rgba(120, 120, 120, 0.02)',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '12px'
-          }}
-        >
-          <button 
-            className="btn btn-secondary"
-            onClick={onClose}
-            disabled={isLoading}
-            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-          >
+        <div className="flex justify-end gap-3 border-t border-border bg-surface-2 px-5 py-3.5">
+          <button className="btn btn-secondary !px-3 !text-sm" onClick={onClose} disabled={isLoading}>
             Cancel
           </button>
-          
-          <button 
-            className="btn btn-primary"
+          <button
+            className="btn btn-primary min-w-[6.25rem] !px-4 !text-sm"
             onClick={activeTab === 'ddl' ? handleDdlImport : handleSpringBootImport}
             disabled={isLoading}
-            style={{ padding: '6px 16px', fontSize: '0.8rem', minWidth: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            {isLoading ? (
-              <RefreshCw size={14} className="animate-spin" />
-            ) : (
-              'Import Schema'
-            )}
+            {isLoading ? <RefreshCw size={14} className="animate-spin" /> : 'Import Schema'}
           </button>
         </div>
       </div>

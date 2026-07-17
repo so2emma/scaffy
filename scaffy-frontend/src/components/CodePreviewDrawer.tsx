@@ -4,14 +4,13 @@ import { useDiagramStore } from '../store/useDiagramStore';
 import { useToast } from '../hooks/useToast';
 import {
   Terminal, RefreshCw, AlertTriangle, ChevronDown, ChevronUp,
-  ChevronRight, FileCode, FileText, Database, TestTube, Copy, Check
+  ChevronRight, FileCode, FileText, Database, TestTube, Copy, Check,
 } from 'lucide-react';
 
 interface CodePreviewDrawerProps {
   entityName: string;
 }
 
-// ---- File tree types ----
 interface TreeNode {
   name: string;
   path: string;
@@ -50,14 +49,14 @@ function buildFileTree(filePaths: { path: string; tabKey: string }[]): TreeNode[
 
 function getFileIcon(filename: string) {
   const lower = filename.toLowerCase();
-  if (lower.endsWith('.sql')) return <Database size={13} className="ft-icon ft-icon-sql" />;
-  if (lower.includes('test') || lower.includes('spec')) return <TestTube size={13} className="ft-icon ft-icon-test" />;
+  if (lower.endsWith('.sql')) return <Database size={13} className="shrink-0 text-amber-500" />;
+  if (lower.includes('test') || lower.includes('spec'))
+    return <TestTube size={13} className="shrink-0 text-primary" />;
   if (lower.endsWith('.java') || lower.endsWith('.ts') || lower.endsWith('.py') || lower.endsWith('.prisma'))
-    return <FileCode size={13} className="ft-icon ft-icon-code" />;
-  return <FileText size={13} className="ft-icon ft-icon-text" />;
+    return <FileCode size={13} className="shrink-0 text-sky-500" />;
+  return <FileText size={13} className="shrink-0 text-subtle" />;
 }
 
-// ---- Tree Node Component ----
 interface TreeItemProps {
   node: TreeNode;
   depth: number;
@@ -73,23 +72,28 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, depth, activeTabKey, onSelect
     return (
       <>
         <div
-          className="ft-row ft-folder"
+          className="flex h-6 cursor-pointer items-center gap-1 whitespace-nowrap pr-2 text-[0.73rem] font-medium text-muted transition-colors hover:bg-surface-2"
           style={{ paddingLeft: `${4 + depth * 14}px` }}
           onClick={() => setExpanded(!expanded)}
         >
-          <ChevronRight size={11} className={`ft-chevron ${expanded ? 'ft-chevron-open' : ''}`} />
-          <span className="ft-folder-name">{node.name}</span>
-        </div>
-        {expanded && node.children && node.children.map((child) => (
-          <TreeItem
-            key={child.path}
-            node={child}
-            depth={depth + 1}
-            activeTabKey={activeTabKey}
-            onSelect={onSelect}
-            defaultExpanded={depth < 3}
+          <ChevronRight
+            size={11}
+            className={`shrink-0 text-subtle transition-transform ${expanded ? 'rotate-90' : ''}`}
           />
-        ))}
+          <span className="overflow-hidden text-ellipsis">{node.name}</span>
+        </div>
+        {expanded &&
+          node.children &&
+          node.children.map((child) => (
+            <TreeItem
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              activeTabKey={activeTabKey}
+              onSelect={onSelect}
+              defaultExpanded={depth < 3}
+            />
+          ))}
       </>
     );
   }
@@ -98,17 +102,26 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, depth, activeTabKey, onSelect
 
   return (
     <div
-      className={`ft-row ft-file ${isActive ? 'ft-file-active' : ''}`}
+      className={`flex h-6 cursor-pointer items-center gap-1 whitespace-nowrap pr-2 text-[0.73rem] transition-colors ${
+        isActive ? 'bg-surface-3 text-content' : 'text-muted hover:bg-surface-2'
+      }`}
       style={{ paddingLeft: `${4 + depth * 14}px` }}
       onClick={() => node.tabKey && onSelect(node.tabKey)}
     >
       {getFileIcon(node.name)}
-      <span className="ft-file-name">{node.name}</span>
+      <span className="overflow-hidden text-ellipsis">{node.name}</span>
     </div>
   );
 };
 
-// ---- Main Component ----
+const BADGE_STYLES: Record<string, string> = {
+  spring_boot: 'text-primary bg-primary/10',
+  express: 'text-sky-500 bg-sky-500/10',
+  fastapi: 'text-orange-400 bg-orange-400/10',
+  nestjs: 'text-fuchsia-400 bg-fuchsia-400/10',
+  django_rest: 'text-amber-500 bg-amber-500/10',
+};
+
 export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName }) => {
   const getDiagramSchema = useDiagramStore((state) => state.getDiagramSchema);
   const theme = useDiagramStore((state) => state.theme);
@@ -135,62 +148,65 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   const [isResizingH, setIsResizingH] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
 
-  const getFilePathForTab = useCallback((tab: string): string => {
-    const projNameSnake = projectName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-    const pkgPath = basePackage.replace(/\./g, '/');
-    const entitySnake = entityName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-    const entityUncap = entityName.charAt(0).toLowerCase() + entityName.slice(1);
+  const getFilePathForTab = useCallback(
+    (tab: string): string => {
+      const projNameSnake = projectName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+      const pkgPath = basePackage.replace(/\./g, '/');
+      const entitySnake = entityName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+      const entityUncap = entityName.charAt(0).toLowerCase() + entityName.slice(1);
 
-    if (targetFramework === 'SPRING_BOOT') {
-      if (tab === 'Entity') return `${projNameSnake}/src/main/java/${pkgPath}/entity/${entityName}.java`;
-      if (tab === 'Request DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}RequestDto.java`;
-      if (tab === 'Response DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}ResponseDto.java`;
-      if (tab === 'Mapper') return `${projNameSnake}/src/main/java/${pkgPath}/mapper/${entityName}Mapper.java`;
-      if (tab === 'Repository') return `${projNameSnake}/src/main/java/${pkgPath}/repository/${entityName}Repository.java`;
-      if (tab === 'Service') return `${projNameSnake}/src/main/java/${pkgPath}/service/${entityName}Service.java`;
-      if (tab === 'ServiceImpl') return `${projNameSnake}/src/main/java/${pkgPath}/service/impl/${entityName}ServiceImpl.java`;
-      if (tab === 'Controller') return `${projNameSnake}/src/main/java/${pkgPath}/controller/${entityName}Controller.java`;
-      if (tab === 'Flyway SQL') return `${projNameSnake}/src/main/resources/db/migration/V1__init.sql`;
-      if (tab === 'Unit Test') return `${projNameSnake}/src/test/java/${pkgPath}/service/${entityName}ServiceImplTest.java`;
-      if (tab.startsWith('Enum ')) {
-        const enumClassName = tab.substring(5);
-        return `${projNameSnake}/src/main/java/${pkgPath}/entity/${enumClassName}.java`;
+      if (targetFramework === 'SPRING_BOOT') {
+        if (tab === 'Entity') return `${projNameSnake}/src/main/java/${pkgPath}/entity/${entityName}.java`;
+        if (tab === 'Request DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}RequestDto.java`;
+        if (tab === 'Response DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}ResponseDto.java`;
+        if (tab === 'Mapper') return `${projNameSnake}/src/main/java/${pkgPath}/mapper/${entityName}Mapper.java`;
+        if (tab === 'Repository') return `${projNameSnake}/src/main/java/${pkgPath}/repository/${entityName}Repository.java`;
+        if (tab === 'Service') return `${projNameSnake}/src/main/java/${pkgPath}/service/${entityName}Service.java`;
+        if (tab === 'ServiceImpl') return `${projNameSnake}/src/main/java/${pkgPath}/service/impl/${entityName}ServiceImpl.java`;
+        if (tab === 'Controller') return `${projNameSnake}/src/main/java/${pkgPath}/controller/${entityName}Controller.java`;
+        if (tab === 'Flyway SQL') return `${projNameSnake}/src/main/resources/db/migration/V1__init.sql`;
+        if (tab === 'Unit Test') return `${projNameSnake}/src/test/java/${pkgPath}/service/${entityName}ServiceImplTest.java`;
+        if (tab.startsWith('Enum ')) {
+          const enumClassName = tab.substring(5);
+          return `${projNameSnake}/src/main/java/${pkgPath}/entity/${enumClassName}.java`;
+        }
+      } else if (targetFramework === 'EXPRESS') {
+        if (tab === 'Prisma Schema') return `${projNameSnake}/prisma/schema.prisma`;
+        if (tab === 'Service') return `${projNameSnake}/src/services/${entityUncap}Service.ts`;
+        if (tab === 'Controller') return `${projNameSnake}/src/controllers/${entityUncap}Controller.ts`;
+        if (tab === 'Route') return `${projNameSnake}/src/routes/${entityUncap}Route.ts`;
+        if (tab === 'App Configuration') return `${projNameSnake}/src/app.ts`;
+      } else if (targetFramework === 'FASTAPI') {
+        if (tab === 'Model (SQLAlchemy)') return `${projNameSnake}/app/models/${entitySnake}.py`;
+        if (tab === 'Schema (Pydantic)') return `${projNameSnake}/app/schemas/${entitySnake}.py`;
+        if (tab === 'CRUD Helpers') return `${projNameSnake}/app/crud/${entitySnake}.py`;
+        if (tab === 'Router') return `${projNameSnake}/app/routers/${entitySnake}.py`;
+        if (tab === 'Main App') return `${projNameSnake}/app/main.py`;
+        if (tab === 'Database Config') return `${projNameSnake}/app/database.py`;
+      } else if (targetFramework === 'NESTJS') {
+        const entityKebab = entityName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+        if (tab === 'Entity') return `${projNameSnake}/src/${entityKebab}/entities/${entityKebab}.entity.ts`;
+        if (tab === 'Create DTO') return `${projNameSnake}/src/${entityKebab}/dto/create-${entityKebab}.dto.ts`;
+        if (tab === 'Update DTO') return `${projNameSnake}/src/${entityKebab}/dto/update-${entityKebab}.dto.ts`;
+        if (tab === 'Service') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.ts`;
+        if (tab === 'Controller') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.controller.ts`;
+        if (tab === 'Module') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.module.ts`;
+        if (tab === 'App Module') return `${projNameSnake}/src/app.module.ts`;
+        if (tab === 'Unit Test') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.spec.ts`;
+      } else if (targetFramework === 'DJANGO_REST') {
+        if (tab === 'Models') return `${projNameSnake}/api/models.py`;
+        if (tab === 'Serializers') return `${projNameSnake}/api/serializers.py`;
+        if (tab === 'Views') return `${projNameSnake}/api/views.py`;
+        if (tab === 'URLs') return `${projNameSnake}/api/urls.py`;
+        if (tab === 'Admin') return `${projNameSnake}/api/admin.py`;
+        if (tab === 'Settings') return `${projNameSnake}/${projNameSnake}/settings.py`;
+        if (tab === 'Tests') return `${projNameSnake}/api/tests.py`;
       }
-    } else if (targetFramework === 'EXPRESS') {
-      if (tab === 'Prisma Schema') return `${projNameSnake}/prisma/schema.prisma`;
-      if (tab === 'Service') return `${projNameSnake}/src/services/${entityUncap}Service.ts`;
-      if (tab === 'Controller') return `${projNameSnake}/src/controllers/${entityUncap}Controller.ts`;
-      if (tab === 'Route') return `${projNameSnake}/src/routes/${entityUncap}Route.ts`;
-      if (tab === 'App Configuration') return `${projNameSnake}/src/app.ts`;
-    } else if (targetFramework === 'FASTAPI') {
-      if (tab === 'Model (SQLAlchemy)') return `${projNameSnake}/app/models/${entitySnake}.py`;
-      if (tab === 'Schema (Pydantic)') return `${projNameSnake}/app/schemas/${entitySnake}.py`;
-      if (tab === 'CRUD Helpers') return `${projNameSnake}/app/crud/${entitySnake}.py`;
-      if (tab === 'Router') return `${projNameSnake}/app/routers/${entitySnake}.py`;
-      if (tab === 'Main App') return `${projNameSnake}/app/main.py`;
-      if (tab === 'Database Config') return `${projNameSnake}/app/database.py`;
-    } else if (targetFramework === 'NESTJS') {
-      const entityKebab = entityName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-      if (tab === 'Entity') return `${projNameSnake}/src/${entityKebab}/entities/${entityKebab}.entity.ts`;
-      if (tab === 'Create DTO') return `${projNameSnake}/src/${entityKebab}/dto/create-${entityKebab}.dto.ts`;
-      if (tab === 'Update DTO') return `${projNameSnake}/src/${entityKebab}/dto/update-${entityKebab}.dto.ts`;
-      if (tab === 'Service') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.ts`;
-      if (tab === 'Controller') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.controller.ts`;
-      if (tab === 'Module') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.module.ts`;
-      if (tab === 'App Module') return `${projNameSnake}/src/app.module.ts`;
-      if (tab === 'Unit Test') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.spec.ts`;
-    } else if (targetFramework === 'DJANGO_REST') {
-      if (tab === 'Models') return `${projNameSnake}/api/models.py`;
-      if (tab === 'Serializers') return `${projNameSnake}/api/serializers.py`;
-      if (tab === 'Views') return `${projNameSnake}/api/views.py`;
-      if (tab === 'URLs') return `${projNameSnake}/api/urls.py`;
-      if (tab === 'Admin') return `${projNameSnake}/api/admin.py`;
-      if (tab === 'Settings') return `${projNameSnake}/${projNameSnake}/settings.py`;
-      if (tab === 'Tests') return `${projNameSnake}/api/tests.py`;
-    }
 
-    return `${projNameSnake}/${tab}`;
-  }, [projectName, basePackage, entityName, targetFramework]);
+      return `${projNameSnake}/${tab}`;
+    },
+    [projectName, basePackage, entityName, targetFramework]
+  );
 
   const fileTree = useMemo(() => {
     const fileKeys = Object.keys(files);
@@ -199,14 +215,11 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     return buildFileTree(paths);
   }, [files, getFilePathForTab]);
 
-  // Vertical resize (drawer height)
   useEffect(() => {
     if (!isResizingV) return;
     const handleMouseMove = (e: MouseEvent) => {
       const newHeight = window.innerHeight - e.clientY;
-      if (newHeight >= 200 && newHeight <= window.innerHeight - 100) {
-        setDrawerHeight(newHeight);
-      }
+      if (newHeight >= 200 && newHeight <= window.innerHeight - 100) setDrawerHeight(newHeight);
     };
     const handleMouseUp = () => setIsResizingV(false);
     window.addEventListener('mousemove', handleMouseMove);
@@ -217,17 +230,14 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     };
   }, [isResizingV]);
 
-  // Horizontal resize (tree panel width)
   useEffect(() => {
     if (!isResizingH) return;
     const handleMouseMove = (e: MouseEvent) => {
-      const drawer = document.querySelector('.code-preview__body');
+      const drawer = document.querySelector('[data-code-preview-body]');
       if (!drawer) return;
       const rect = drawer.getBoundingClientRect();
       const newWidth = e.clientX - rect.left;
-      if (newWidth >= 150 && newWidth <= 400) {
-        setTreePanelWidth(newWidth);
-      }
+      if (newWidth >= 150 && newWidth <= 400) setTreePanelWidth(newWidth);
     };
     const handleMouseUp = () => setIsResizingH(false);
     window.addEventListener('mousemove', handleMouseMove);
@@ -238,13 +248,13 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     };
   }, [isResizingH]);
 
-  // Debounced preview API fetch
   useEffect(() => {
     setIsLoading(true);
     const delayDebounceFn = setTimeout(() => {
       fetchPreview();
     }, 450);
     return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityName, nodes, edges, projectName, basePackage, openApiSupport, generateTestStubs, flywayMigration, targetFramework]);
 
   const fetchPreview = async () => {
@@ -303,12 +313,23 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     return 'java';
   };
 
-  // Extract just the filename from the path for the tab display
   const activeFileName = activeFilePath.split('/').pop() || activeTab;
+  const badgeClass = BADGE_STYLES[targetFramework.toLowerCase()] || 'text-muted bg-surface-2';
+
+  const frameworkLabel =
+    targetFramework === 'SPRING_BOOT'
+      ? 'Spring Boot'
+      : targetFramework === 'EXPRESS'
+      ? 'Express'
+      : targetFramework === 'NESTJS'
+      ? 'NestJS'
+      : targetFramework === 'DJANGO_REST'
+      ? 'Django REST'
+      : 'FastAPI';
 
   return (
     <div
-      className={`code-preview ${isMinimized ? 'code-preview--minimized' : ''}`}
+      className="relative z-[6] flex shrink-0 flex-col overflow-hidden border-t border-border bg-surface"
       style={{
         height: isMinimized ? '40px' : `${drawerHeight}px`,
         transition: isResizingV || isResizingH ? 'none' : 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -317,52 +338,60 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       {/* Vertical Resize Handle */}
       {!isMinimized && (
         <div
-          className="code-preview__resize-v"
-          onMouseDown={(e) => { e.preventDefault(); setIsResizingV(true); }}
+          className="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize transition-colors hover:bg-primary/40"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsResizingV(true);
+          }}
         />
       )}
 
-      {/* Title Bar (always visible) */}
-      <div className="code-preview__titlebar">
-        <div className="code-preview__titlebar-left">
-          <button
-            className="code-preview__toggle"
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? 'Expand Preview' : 'Collapse Preview'}
-          >
-            {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          <Terminal size={13} />
-          <span className="code-preview__title">
-            Preview — <strong>{entityName}</strong>
-          </span>
-          <span className={`code-preview__badge code-preview__badge--${targetFramework.toLowerCase()}`}>
-            {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express' : targetFramework === 'NESTJS' ? 'NestJS' : targetFramework === 'DJANGO_REST' ? 'Django REST' : 'FastAPI'}
-          </span>
-          {isLoading && <RefreshCw size={11} className="animate-spin" />}
-        </div>
+      {/* Title Bar */}
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3">
+        <button
+          className="flex h-6 w-6 items-center justify-center rounded text-muted transition-colors hover:bg-surface-2 hover:text-content"
+          onClick={() => setIsMinimized(!isMinimized)}
+          title={isMinimized ? 'Expand Preview' : 'Collapse Preview'}
+        >
+          {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        <Terminal size={13} className="text-muted" />
+        <span className="text-[0.78rem] text-muted">
+          Preview — <strong className="font-semibold text-content">{entityName}</strong>
+        </span>
+        <span
+          className={`rounded px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${badgeClass}`}
+        >
+          {frameworkLabel}
+        </span>
+        {isLoading && <RefreshCw size={11} className="animate-spin text-muted" />}
       </div>
 
-      {/* Main Body */}
+      {/* Body */}
       {!isMinimized && (
-        <div className="code-preview__body">
+        <div className="flex min-h-0 flex-1 flex-row overflow-hidden" data-code-preview-body>
           {error ? (
-            <div className="code-preview__overlay">
-              <AlertTriangle size={28} style={{ color: 'var(--accent-red)' }} />
-              <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Scaffolding Error</div>
-              <pre className="code-preview__error-msg">{error}</pre>
+            <div className="flex flex-1 flex-col items-center justify-center gap-2.5 text-sm text-muted">
+              <AlertTriangle size={28} className="text-danger" />
+              <div className="text-sm font-semibold text-content">Scaffolding Error</div>
+              <pre className="max-w-[80%] whitespace-pre-wrap text-center text-xs opacity-70">{error}</pre>
             </div>
           ) : fileKeys.length === 0 ? (
-            <div className="code-preview__overlay">
-              <RefreshCw size={22} className="animate-spin" style={{ opacity: 0.5 }} />
+            <div className="flex flex-1 flex-col items-center justify-center gap-2.5 text-sm text-muted">
+              <RefreshCw size={22} className="animate-spin opacity-50" />
               <span>Loading scaffold preview...</span>
             </div>
           ) : (
             <>
-              {/* File Tree Sidebar */}
-              <div className="code-preview__tree" style={{ width: `${treePanelWidth}px` }}>
-                <div className="code-preview__tree-header">EXPLORER</div>
-                <div className="code-preview__tree-scroll">
+              {/* File Tree */}
+              <div
+                className="scroll-thin flex h-full shrink-0 flex-col border-r border-border bg-surface-2"
+                style={{ width: `${treePanelWidth}px`, minWidth: 150, maxWidth: 400 }}
+              >
+                <div className="shrink-0 border-b border-border px-3.5 py-2 text-[0.65rem] font-bold tracking-widest text-subtle">
+                  EXPLORER
+                </div>
+                <div className="scroll-thin flex-1 overflow-y-auto overflow-x-hidden py-1">
                   {fileTree.map((node) => (
                     <TreeItem
                       key={node.path}
@@ -378,21 +407,30 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
 
               {/* Resize Handle */}
               <div
-                className={`code-preview__resize-h ${isResizingH ? 'code-preview__resize-h--active' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); setIsResizingH(true); }}
+                className={`w-[3px] shrink-0 cursor-col-resize transition-colors hover:bg-primary/40 ${
+                  isResizingH ? 'bg-primary/50' : 'bg-transparent'
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsResizingH(true);
+                }}
               />
 
               {/* Editor Area */}
-              <div className="code-preview__editor-area">
+              <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
                 {/* Tab bar */}
-                <div className="code-preview__tabs">
-                  <div className="code-preview__tab code-preview__tab--active">
+                <div className="flex h-[34px] shrink-0 items-center gap-2 border-b border-border bg-surface-2 px-2">
+                  <div className="flex h-full items-center gap-1.5 border-b-2 border-primary px-3 text-[0.72rem] font-medium text-content">
                     {getFileIcon(activeFileName)}
                     <span>{activeFileName}</span>
                   </div>
-                  <div className="code-preview__tabs-spacer" />
+                  <div className="flex-1" />
                   <button
-                    className={`code-preview__copy ${copied ? 'code-preview__copy--done' : ''}`}
+                    className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                      copied
+                        ? 'border-primary/40 text-primary'
+                        : 'border-border text-subtle hover:border-border-strong hover:text-content'
+                    }`}
                     onClick={handleCopy}
                     title="Copy to clipboard"
                   >
@@ -402,24 +440,26 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                 </div>
 
                 {/* Breadcrumb */}
-                <div className="code-preview__breadcrumb">
+                <div className="scroll-thin flex shrink-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap border-b border-border bg-surface-2/50 px-3.5 py-1 font-mono text-[0.68rem] text-subtle">
                   {activeFilePath.split('/').map((seg, i, arr) => (
                     <React.Fragment key={i}>
-                      <span className={i === arr.length - 1 ? 'code-preview__breadcrumb-active' : ''}>{seg}</span>
-                      {i < arr.length - 1 && <ChevronRight size={10} className="code-preview__breadcrumb-sep" />}
+                      <span className={i === arr.length - 1 ? 'font-medium text-content' : ''}>{seg}</span>
+                      {i < arr.length - 1 && (
+                        <ChevronRight size={10} className="shrink-0 opacity-50" />
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
 
                 {/* Monaco */}
-                <div className="code-preview__monaco">
+                <div className="relative min-h-0 flex-1">
                   <Editor
                     height="100%"
                     language={getEditorLanguage()}
                     theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                     value={activeCode}
                     loading={
-                      <div className="code-preview__overlay">
+                      <div className="flex flex-col items-center justify-center gap-2 text-sm text-muted">
                         <RefreshCw size={18} className="animate-spin" />
                         <span>Loading editor...</span>
                       </div>

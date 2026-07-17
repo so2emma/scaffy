@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { Sidebar } from '../components/Sidebar';
@@ -11,6 +11,7 @@ import { RelationshipPanel } from '../components/RelationshipPanel';
 import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
 import { CodePreviewDrawer } from '../components/CodePreviewDrawer';
 import { TemplateGalleryModal } from '../components/TemplateGalleryModal';
+import { AVAILABLE_FRAMEWORKS } from '../components/FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
 import { Database, Sun, Moon } from 'lucide-react';
 
@@ -21,6 +22,10 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function frameworkLabel(id: string): string {
+  return AVAILABLE_FRAMEWORKS.find((fw) => fw.id === id)?.displayName ?? id;
+}
 
 function ScaffyAppContent() {
   const getDiagramSchema = useDiagramStore((state) => state.getDiagramSchema);
@@ -39,11 +44,12 @@ function ScaffyAppContent() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
 
-  // Compute selected entity name based on node selection in React Flow
   const selectedNode = nodes.find((n) => n.selected);
   const selectedEntityName = selectedNode ? selectedNode.data.name : null;
 
-  // Debounced API-based validation for immediate feedback
+  const framework = AVAILABLE_FRAMEWORKS.find((fw) => fw.id === targetFramework);
+  const frameworkColor = framework?.color ?? '#16a34a';
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (nodes.length === 0) {
@@ -54,6 +60,7 @@ function ScaffyAppContent() {
     }, 400);
 
     return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, projectName, basePackage, targetFramework]);
 
   const runValidation = async (): Promise<boolean> => {
@@ -61,9 +68,7 @@ function ScaffyAppContent() {
       const schema = getDiagramSchema();
       const response = await fetch('http://localhost:8080/api/scaffold/validate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(schema),
       });
       if (response.ok) {
@@ -78,7 +83,6 @@ function ScaffyAppContent() {
   };
 
   const handleGenerate = async () => {
-    // Run validation one final time
     const isValid = await runValidation();
     if (!isValid && validationErrors.length > 0) {
       showToast('Cannot generate scaffold. Please fix the validation errors first.', 'warning');
@@ -90,9 +94,7 @@ function ScaffyAppContent() {
       const schema = getDiagramSchema();
       const response = await fetch('http://localhost:8080/api/scaffold/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(schema),
       });
 
@@ -103,7 +105,6 @@ function ScaffyAppContent() {
         return;
       }
 
-      // Download ZIP file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -115,7 +116,7 @@ function ScaffyAppContent() {
       window.URL.revokeObjectURL(url);
       showToast('Scaffold generated and downloaded successfully!', 'success');
     } catch (e) {
-      showToast('Server connection error. Ensure the Spring Boot backend is running on port 8080.', 'error');
+      showToast('Server connection error. Ensure the backend is running on port 8080.', 'error');
       console.error(e);
     } finally {
       setIsGenerating(false);
@@ -123,75 +124,39 @@ function ScaffyAppContent() {
   };
 
   return (
-    <div className={`app-container ${theme}`}>
+    <div className={`${theme === 'dark' ? 'dark' : ''} flex h-screen w-screen flex-col bg-canvas text-content`}>
       {/* Header */}
-      <header className="header">
-        <div className="logo">
-          <Database className="logo-icon" />
-          <span>Scaffy</span>
-          <span style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(120,120,120,0.1)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+      <header className="flex h-16 items-center justify-between gap-4 border-b border-border bg-surface px-4 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Database size={20} />
+          </span>
+          <span className="font-display text-lg font-bold tracking-tight">Scaffy</span>
+          <span className="hidden rounded-full border border-border bg-surface-2 px-2 py-0.5 text-[0.65rem] text-muted sm:inline">
             v1.0
           </span>
-          <span style={{
-            fontSize: '0.7rem',
-            fontWeight: 500,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            marginLeft: '8px',
-            background: 
-              targetFramework === 'SPRING_BOOT' 
-                ? 'rgba(74, 222, 128, 0.1)' 
-                : targetFramework === 'EXPRESS' 
-                ? 'rgba(56, 189, 248, 0.1)' 
-                : 'rgba(251, 146, 60, 0.1)',
-            color: 
-              targetFramework === 'SPRING_BOOT' 
-                ? '#4ade80' 
-                : targetFramework === 'EXPRESS' 
-                ? '#38bdf8' 
-                : '#fb923c',
-            border: `1px solid ${
-              targetFramework === 'SPRING_BOOT' 
-                ? 'rgba(74, 222, 128, 0.2)' 
-                : targetFramework === 'EXPRESS' 
-                ? 'rgba(56, 189, 248, 0.2)' 
-                : 'rgba(251, 146, 60, 0.2)'
-            }`
-          }}>
-            <span style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              background: 
-                targetFramework === 'SPRING_BOOT' 
-                  ? '#4ade80' 
-                  : targetFramework === 'EXPRESS' 
-                  ? '#38bdf8' 
-                  : '#fb923c',
-            }} />
-            {targetFramework === 'SPRING_BOOT' ? 'Spring Boot' : targetFramework === 'EXPRESS' ? 'Express TS' : 'FastAPI'}
+          <span
+            className="ml-1 hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium md:inline-flex"
+            style={{
+              background: `color-mix(in srgb, ${frameworkColor} 12%, transparent)`,
+              color: frameworkColor,
+            }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: frameworkColor }} />
+            {frameworkLabel(targetFramework)}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+
+        <div className="flex items-center gap-3">
+          <p className="hidden max-w-md text-sm text-muted lg:block">
             Design ER diagrams and generate custom production-ready{' '}
-            <strong style={{ color: 'var(--text-primary)' }}>
-              {targetFramework === 'SPRING_BOOT'
-                ? 'Spring Boot'
-                : targetFramework === 'EXPRESS'
-                ? 'Express (TypeScript)'
-                : 'FastAPI (Python)'}
-            </strong>{' '}
-            scaffolding in one click.
-          </div>
-          <button 
-            onClick={toggleTheme} 
-            className="btn btn-secondary" 
-            style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            <strong className="font-semibold text-content">{frameworkLabel(targetFramework)}</strong> scaffolding in one click.
+          </p>
+          <button
+            onClick={toggleTheme}
+            className="btn btn-secondary h-9 w-9 !p-0"
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label="Toggle theme"
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -199,35 +164,31 @@ function ScaffyAppContent() {
       </header>
 
       {/* Main workspace */}
-      <div className="main-content">
-        {/* Left Project Sidebar */}
-        <Sidebar 
-          onGenerate={handleGenerate} 
+      <div className="relative flex flex-1 overflow-hidden">
+        <Sidebar
+          onGenerate={handleGenerate}
           isGenerating={isGenerating}
           onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
         />
 
-        {/* Center Canvas & Code Preview Split */}
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100%', overflow: 'hidden' }}>
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <ReactFlowProvider>
-            <Canvas 
+            <Canvas
               onOpenImport={() => setIsImportOpen(true)}
               onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
             />
           </ReactFlowProvider>
           {selectedEntityName && <CodePreviewDrawer entityName={selectedEntityName} />}
         </div>
-        
+
         <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
-        <TemplateGalleryModal 
+        <TemplateGalleryModal
           isOpen={isTemplateGalleryOpen}
           onClose={() => setIsTemplateGalleryOpen(false)}
         />
 
-        {/* Right Relationship Config Panel */}
         <RelationshipPanel />
 
-        {/* Floating Validation Errors Card */}
         <ValidationErrors errors={validationErrors} />
       </div>
     </div>

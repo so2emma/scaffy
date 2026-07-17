@@ -12,6 +12,13 @@ import {
 import dagre from '@dagrejs/dagre';
 import { getDefaultFeaturesForFramework } from '../constants/frameworkFeatures';
 
+export interface ValidationError {
+  type: string;
+  target: string;
+  property?: string;
+  message: string;
+}
+
 export interface ValidationConfig {
   required: boolean;
   minSize: number | null;
@@ -58,6 +65,8 @@ interface DiagramState {
   theme: 'light' | 'dark';
   enabledFeatures: Record<string, boolean>;
   targetFramework: string;
+  validationErrors: ValidationError[];
+  setValidationErrors: (errors: ValidationError[]) => void;
   
   // History State
   past: Array<{ nodes: EntityNode[]; edges: Edge[] }>;
@@ -109,6 +118,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
   theme: 'dark',
   enabledFeatures: getDefaultFeaturesForFramework('SPRING_BOOT'),
   targetFramework: 'SPRING_BOOT',
+  validationErrors: [],
+  setValidationErrors: (validationErrors) => set({ validationErrors }),
   
   past: [],
   future: [],

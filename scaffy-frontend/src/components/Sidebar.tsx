@@ -14,7 +14,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOpenTemplates }) => {
   const projectName = useDiagramStore((state) => state.projectName);
   const setProjectName = useDiagramStore((state) => state.setProjectName);
-  
+
   const basePackage = useDiagramStore((state) => state.basePackage);
   const setBasePackage = useDiagramStore((state) => state.setBasePackage);
   const targetFramework = useDiagramStore((state) => state.targetFramework);
@@ -37,7 +37,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
   const frameworkFeatures = FRAMEWORK_FEATURES[targetFramework] || [];
   const currentFramework = AVAILABLE_FRAMEWORKS.find((fw) => fw.id === targetFramework);
 
-  // Auto-save with debounce
   const performAutoSave = useCallback(() => {
     const storeState = useDiagramStore.getState();
     const dataToSave = {
@@ -57,22 +56,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
   }, []);
 
   useEffect(() => {
-    // Mark as unsaved whenever relevant state changes
     setSaveStatus('unsaved');
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-    saveTimerRef.current = setTimeout(() => {
-      performAutoSave();
-    }, 1000);
-
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => performAutoSave(), 1000);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [nodes, edges, projectName, basePackage, targetFramework, enabledFeatures, performAutoSave]);
 
-  // Export diagram as .scaffy.json file
   const handleExport = () => {
     try {
       const storeState = useDiagramStore.getState();
@@ -100,10 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
     }
   };
 
-  // Import diagram from JSON file
-  const handleImport = () => {
-    fileInputRef.current?.click();
-  };
+  const handleImport = () => fileInputRef.current?.click();
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,25 +108,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
         showToast('Failed to parse diagram file: ' + err, 'error');
       }
     };
-    reader.onerror = () => {
-      showToast('Failed to read file', 'error');
-    };
+    reader.onerror = () => showToast('Failed to read file', 'error');
     reader.readAsText(file);
-
-    // Reset file input so the same file can be re-imported
     e.target.value = '';
   };
 
   return (
-    <div className="sidebar" style={{ borderLeft: 'none', borderRight: '1px solid var(--glass-border)', width: '320px', height: '100%', overflowY: 'auto' }}>
-      <h3 className="sidebar-title">Project Config</h3>
+    <aside className="scroll-thin flex h-full w-64 shrink-0 flex-col gap-6 overflow-y-auto border-r border-border bg-surface p-5 lg:w-72">
+      <h3 className="font-display text-base font-semibold">Project Config</h3>
 
-      <div className="sidebar-section">
-        <div className="sidebar-field">
-          <label className="input-label">Project Name</label>
+      {/* Basic config */}
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="field-label">Project Name</label>
           <input
             type="text"
-            className="text-input"
+            className="input"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             placeholder="MyProject"
@@ -146,11 +131,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
         </div>
 
         {targetFramework === 'SPRING_BOOT' && (
-          <div className="sidebar-field">
-            <label className="input-label">Base Package</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="field-label">Base Package</label>
             <input
               type="text"
-              className="text-input"
+              className="input"
               value={basePackage}
               onChange={(e) => setBasePackage(e.target.value)}
               placeholder="com.example.project"
@@ -158,127 +143,88 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
           </div>
         )}
 
-        <div className="sidebar-field">
-          <label className="input-label" style={{ marginBottom: '8px', display: 'block' }}>Target Framework</label>
-          
-          {/* Active framework display card */}
+        <div className="flex flex-col gap-2">
+          <label className="field-label">Target Framework</label>
+
           {currentFramework && (
             <div
-              className="sidebar-framework-card"
+              className="flex items-center gap-2.5 rounded-xl border p-3"
               style={{
-                border: `1px solid ${currentFramework.color}`,
-                background: `rgba(${hexToRgb(currentFramework.color)}, 0.06)`,
-                boxShadow: `0 0 16px rgba(${hexToRgb(currentFramework.color)}, 0.1)`,
+                borderColor: currentFramework.color,
+                background: `color-mix(in srgb, ${currentFramework.color} 8%, transparent)`,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: currentFramework.color,
-                    flexShrink: 0,
-                  }}
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                    {currentFramework.displayName}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    {currentFramework.description}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.6rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    color: currentFramework.color,
-                    fontWeight: 700,
-                    background: `rgba(${hexToRgb(currentFramework.color)}, 0.12)`,
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                  }}
-                >
-                  {currentFramework.language}
-                </span>
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: currentFramework.color }}
+              />
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-sm font-semibold">{currentFramework.displayName}</span>
+                <span className="truncate text-xs text-muted">{currentFramework.description}</span>
               </div>
+              <span
+                className="ml-auto shrink-0 rounded px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+                style={{
+                  color: currentFramework.color,
+                  background: `color-mix(in srgb, ${currentFramework.color} 14%, transparent)`,
+                }}
+              >
+                {currentFramework.language}
+              </span>
             </div>
           )}
 
-          {/* Change framework button */}
           <button
-            className="btn btn-secondary"
+            className="btn btn-secondary w-full justify-between"
             onClick={() => setIsFrameworkModalOpen(true)}
-            style={{ width: '100%', marginTop: '8px', justifyContent: 'space-between' }}
           >
             <span>Change Framework</span>
             <ChevronRight size={14} />
           </button>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--glass-border)', margin: '16px 0 0 0', padding: '16px 0 0 0' }}>
-          <label className="section-label" style={{ marginBottom: '8px' }}>Generator Features</label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Generator features */}
+        <div className="border-t border-border pt-4">
+          <label className="section-label mb-2 block">Generator Features</label>
+          <div className="flex flex-col gap-2.5">
             {frameworkFeatures.map((feature) => (
               <label
                 key={feature.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '8px',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  transition: 'opacity 0.2s'
-                }}
+                className="flex cursor-pointer items-start gap-2 text-sm text-content"
                 title={`Toggle ${feature.label}`}
               >
                 <input
                   type="checkbox"
                   checked={!!enabledFeatures[feature.id]}
                   onChange={() => toggleFeature(feature.id)}
-                  style={{
-                    accentColor: 'var(--text-main)',
-                    width: '14px',
-                    height: '14px',
-                    marginTop: '2px',
-                    cursor: 'pointer'
-                  }}
+                  className="mt-0.5 h-4 w-4 cursor-pointer accent-primary"
                 />
                 <span>{feature.label}</span>
               </label>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+      {/* Canvas controls */}
+      <section className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="section-label">Canvas Controls</label>
-        <button 
-          className="btn btn-secondary" 
-          onClick={onOpenTemplates}
-          style={{ width: '100%', marginBottom: '8px' }}
-        >
+        <button className="btn btn-secondary w-full" onClick={onOpenTemplates}>
           <LayoutTemplate size={16} /> Start from Template
         </button>
-        <button 
-          className="btn btn-secondary" 
-          onClick={() => addEntity('NewEntity', 100, 100)}
-          style={{ width: '100%' }}
-        >
+        <button className="btn btn-secondary w-full" onClick={() => addEntity('NewEntity', 100, 100)}>
           <Plus size={16} /> Add Entity Node
         </button>
-      </div>
+      </section>
 
-      <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+      {/* Diagram file */}
+      <section className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="section-label">Diagram File</label>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={handleExport} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary flex-1 !px-2.5 !text-xs" onClick={handleExport}>
             <FileDown size={14} /> Export
           </button>
-          <button className="btn btn-secondary" onClick={handleImport} style={{ flex: 1, padding: '8px 10px', fontSize: '0.75rem' }}>
+          <button className="btn btn-secondary flex-1 !px-2.5 !text-xs" onClick={handleImport}>
             <Upload size={14} /> Import
           </button>
         </div>
@@ -287,65 +233,62 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
           type="file"
           accept=".json,.scaffy.json"
           onChange={handleFileSelected}
-          style={{ display: 'none' }}
+          className="hidden"
         />
-      </div>
+      </section>
 
-      <div className="sidebar-section" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+      {/* Entities list */}
+      <section className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="section-label">Entities ({nodes.length})</label>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+        <div className="flex flex-col gap-2">
           {nodes.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', padding: '16px' }}>
+            <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted">
               No entities. Add one to start.
             </div>
           ) : (
             nodes.map((node) => (
-              <div key={node.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', background: 'rgba(255,255,255,0.02)', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
-                <Database size={12} style={{ color: 'var(--primary)' }} />
-                <span>{node.data.name}</span>
-                <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+              <div
+                key={node.id}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-sm"
+              >
+                <Database size={12} className="text-primary" />
+                <span className="truncate">{node.data.name}</span>
+                <span className="ml-auto shrink-0 text-[0.65rem] text-muted">
                   ({node.data.attributes.length} attrs)
                 </span>
               </div>
             ))
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Auto-save indicator + Generate button */}
-      <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '12px', marginTop: 'auto' }}>
-        {/* Save status indicator */}
-        <div className={`autosave-indicator ${saveStatus}`} style={{ marginBottom: '10px' }}>
-          <span className="autosave-dot" />
-          <span className="autosave-text">
-            {saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}
-          </span>
+      {/* Auto-save + generate */}
+      <section className="mt-auto border-t border-border pt-3">
+        <div
+          className={`mb-2.5 flex items-center gap-1.5 text-xs font-medium ${
+            saveStatus === 'saved' ? 'text-primary' : 'text-amber-500'
+          }`}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          <span>{saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}</span>
         </div>
 
         <button
-          className="btn btn-primary"
-          style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+          className="btn btn-primary w-full py-3"
           onClick={onGenerate}
           disabled={isGenerating || nodes.length === 0}
         >
           <Download size={18} />
           {isGenerating ? 'Generating...' : 'Generate Backend Scaffold'}
         </button>
-      </div>
+      </section>
 
-      {/* Framework Selector Modal */}
       <FrameworkSelectorModal
         isOpen={isFrameworkModalOpen}
         onClose={() => setIsFrameworkModalOpen(false)}
         selectedFramework={targetFramework}
         onSelect={setTargetFramework}
       />
-    </div>
+    </aside>
   );
 };
-
-function hexToRgb(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '255, 255, 255';
-  return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-}

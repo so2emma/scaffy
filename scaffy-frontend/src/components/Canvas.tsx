@@ -1,15 +1,18 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
+import React, { useEffect, useState } from 'react';
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  MiniMap,
   BackgroundVariant,
   useReactFlow,
   getNodesBounds,
-  getViewportForBounds
+  getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Undo2, Redo2, Sparkles, Upload, Download, Image as ImageIcon, FileText, Loader2, LayoutTemplate } from 'lucide-react';
+import {
+  Undo2, Redo2, Sparkles, Upload, Image as ImageIcon, FileText, Loader2, LayoutTemplate,
+} from 'lucide-react';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { EntityNode } from './EntityNode';
 import { toPng } from 'html-to-image';
@@ -25,6 +28,22 @@ interface CanvasProps {
   onOpenTemplates: () => void;
 }
 
+const ToolbarButton: React.FC<{
+  onClick?: () => void;
+  disabled?: boolean;
+  title?: string;
+  children: React.ReactNode;
+}> = ({ onClick, disabled, title, children }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-content transition-colors enabled:hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-subtle"
+  >
+    {children}
+  </button>
+);
+
 export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates }) => {
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
@@ -33,7 +52,6 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
   const onConnect = useDiagramStore((state) => state.onConnect);
   const setSelectedEdgeId = useDiagramStore((state) => state.setSelectedEdgeId);
 
-  // History & Layout
   const past = useDiagramStore((state) => state.past);
   const future = useDiagramStore((state) => state.future);
   const undo = useDiagramStore((state) => state.undo);
@@ -57,27 +75,20 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
   const handleExport = async (format: 'png' | 'pdf') => {
     const currentNodes = getNodes();
     if (currentNodes.length === 0) return;
-    
+
     setIsExporting(true);
     try {
       const nodesBounds = getNodesBounds(currentNodes);
       const imageWidth = Math.max(800, nodesBounds.width + 100);
       const imageHeight = Math.max(600, nodesBounds.height + 100);
-      
-      const viewport = getViewportForBounds(
-        nodesBounds,
-        imageWidth,
-        imageHeight,
-        0.1,
-        2,
-        0.05
-      );
-      
+
+      const viewport = getViewportForBounds(nodesBounds, imageWidth, imageHeight, 0.1, 2, 0.05);
+
       const viewportNode = document.querySelector('.react-flow__viewport') as HTMLElement;
       if (!viewportNode) throw new Error('Viewport not found');
-      
+
       const dataUrl = await toPng(viewportNode, {
-        backgroundColor: theme === 'dark' ? '#0A0A0A' : '#F9FAFB',
+        backgroundColor: theme === 'dark' ? '#0a0a0b' : '#f6f7f9',
         width: imageWidth,
         height: imageHeight,
         style: {
@@ -86,14 +97,14 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
           transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
         },
       });
-      
+
       if (format === 'png') {
         downloadImage(dataUrl, `${projectName || 'diagram'}.png`);
       } else {
         const pdf = new jsPDF({
           orientation: imageWidth > imageHeight ? 'landscape' : 'portrait',
           unit: 'px',
-          format: [imageWidth, imageHeight]
+          format: [imageWidth, imageHeight],
         });
         pdf.addImage(dataUrl, 'PNG', 0, 0, imageWidth, imageHeight);
         pdf.save(`${projectName || 'diagram'}.pdf`);
@@ -106,191 +117,58 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
     }
   };
 
-  // Keyboard Shortcuts for Undo/Redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       if (isCmdOrCtrl) {
         if (e.key.toLowerCase() === 'z') {
           e.preventDefault();
-          if (e.shiftKey) {
-            redo();
-          } else {
-            undo();
-          }
+          if (e.shiftKey) redo();
+          else undo();
         } else if (e.key.toLowerCase() === 'y') {
           e.preventDefault();
           redo();
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
-  const handleEdgeClick = (_: React.MouseEvent, edge: any) => {
-    setSelectedEdgeId(edge.id);
-  };
+  const handleEdgeClick = (_: React.MouseEvent, edge: any) => setSelectedEdgeId(edge.id);
+  const handlePaneClick = () => setSelectedEdgeId(null);
 
-  const handlePaneClick = () => {
-    setSelectedEdgeId(null);
-  };
+  const divider = <div className="mx-0.5 my-1 w-px bg-border" />;
 
   return (
-    <div className="canvas-wrapper" style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div className="relative h-full w-full bg-canvas">
       {/* Floating Toolbar */}
-      <div className="canvas-toolbar">
-        <div 
-          style={{
-            display: 'flex',
-            background: 'var(--glass-bg)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: '8px',
-            padding: '4px',
-            boxShadow: 'var(--glass-glow)',
-            gap: '4px'
-          }}
-        >
-          <button
-            onClick={() => undo()}
-            disabled={past.length === 0}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: past.length === 0 ? 'var(--text-muted)' : 'var(--text-primary)',
-              cursor: past.length === 0 ? 'not-allowed' : 'pointer',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.2s'
-            }}
-            title="Undo (Ctrl+Z)"
-          >
-            <Undo2 size={16} />
-          </button>
-          <button
-            onClick={() => redo()}
-            disabled={future.length === 0}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: future.length === 0 ? 'var(--text-muted)' : 'var(--text-primary)',
-              cursor: future.length === 0 ? 'not-allowed' : 'pointer',
-              padding: '6px 10px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background 0.2s'
-            }}
-            title="Redo (Ctrl+Y)"
-          >
-            <Redo2 size={16} />
-          </button>
-          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '4px 2px' }} />
-          <button
-            onClick={() => autoLayout()}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              fontFamily: 'var(--font-sans)',
-              transition: 'background 0.2s'
-            }}
-            title="Auto-arrange entity nodes"
-          >
-            <Sparkles size={14} style={{ color: 'var(--text-secondary)' }} />
-            <span>Auto Layout</span>
-          </button>
-          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '4px 2px' }} />
-          <button
-            onClick={onOpenImport}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              fontFamily: 'var(--font-sans)',
-              transition: 'background 0.2s'
-            }}
-            title="Import schema from DDL or Spring Boot folder"
-          >
-            <Upload size={14} style={{ color: 'var(--text-secondary)' }} />
-            <span>Import / Scan</span>
-          </button>
-          
-          <div style={{ width: '1px', background: 'var(--glass-border)', margin: '4px 2px' }} />
-
-          <button
-            onClick={() => handleExport('png')}
-            disabled={isExporting}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-primary)',
-              cursor: isExporting ? 'wait' : 'pointer',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              fontFamily: 'var(--font-sans)',
-              transition: 'background 0.2s',
-              opacity: isExporting ? 0.7 : 1
-            }}
-            title="Download Diagram as PNG"
-          >
-            {isExporting ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} style={{ color: 'var(--text-secondary)' }} />}
-            <span>PNG</span>
-          </button>
-
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={isExporting}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-primary)',
-              cursor: isExporting ? 'wait' : 'pointer',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              fontFamily: 'var(--font-sans)',
-              transition: 'background 0.2s',
-              opacity: isExporting ? 0.7 : 1
-            }}
-            title="Download Diagram as PDF"
-          >
-            {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} style={{ color: 'var(--text-secondary)' }} />}
-            <span>PDF</span>
-          </button>
-        </div>
+      <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-1 rounded-xl border border-border bg-surface/90 p-1 shadow-lg backdrop-blur">
+        <ToolbarButton onClick={() => undo()} disabled={past.length === 0} title="Undo (Ctrl+Z)">
+          <Undo2 size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => redo()} disabled={future.length === 0} title="Redo (Ctrl+Y)">
+          <Redo2 size={16} />
+        </ToolbarButton>
+        {divider}
+        <ToolbarButton onClick={() => autoLayout()} title="Auto-arrange entity nodes">
+          <Sparkles size={14} className="text-muted" />
+          <span className="hidden sm:inline">Auto Layout</span>
+        </ToolbarButton>
+        {divider}
+        <ToolbarButton onClick={onOpenImport} title="Import schema from DDL or backend folder">
+          <Upload size={14} className="text-muted" />
+          <span className="hidden sm:inline">Import / Scan</span>
+        </ToolbarButton>
+        {divider}
+        <ToolbarButton onClick={() => handleExport('png')} disabled={isExporting} title="Download Diagram as PNG">
+          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} className="text-muted" />}
+          <span className="hidden sm:inline">PNG</span>
+        </ToolbarButton>
+        <ToolbarButton onClick={() => handleExport('pdf')} disabled={isExporting} title="Download Diagram as PDF">
+          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} className="text-muted" />}
+          <span className="hidden sm:inline">PDF</span>
+        </ToolbarButton>
       </div>
 
       <ReactFlow
@@ -305,54 +183,29 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
         onNodeDragStart={() => takeSnapshot()}
         fitView
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(120, 120, 120, 0.12)" />
-        <Controls 
-          showInteractive={false} 
-          style={{ 
-            background: 'var(--glass-bg)', 
-            border: '1px solid var(--glass-border)', 
-            borderRadius: '8px',
-            color: 'var(--text-primary)'
-          }} 
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--dot-grid)" />
+        <Controls showInteractive={false} />
+        <MiniMap
+          pannable
+          zoomable
+          maskColor="color-mix(in srgb, var(--c-canvas) 60%, transparent)"
+          style={{ background: 'var(--c-surface)' }}
+          nodeColor="var(--c-primary)"
         />
-        
-        {/* Empty State Prompt */}
+
         {nodes.length === 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center',
-              zIndex: 5,
-              pointerEvents: 'none'
-            }}
-          >
-            <div
-              style={{
-                background: 'var(--glass-bg)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '16px',
-                padding: '32px 40px',
-                boxShadow: 'var(--glass-glow)',
-                pointerEvents: 'all'
-              }}
-            >
-              <div style={{ marginBottom: '16px' }}>
-                <LayoutTemplate size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2 text-center">
+            <div className="pointer-events-auto rounded-2xl border border-border bg-surface px-10 py-8 shadow-xl">
+              <div className="mb-4 flex justify-center">
+                <LayoutTemplate size={48} className="text-subtle opacity-60" />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <h3 className="mb-2 text-lg font-semibold text-content">
                 Start from scratch or choose a template
               </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+              <p className="mb-5 text-sm text-muted">
                 Get started quickly with pre-built entity patterns
               </p>
-              <button
-                className="btn btn-primary"
-                onClick={onOpenTemplates}
-                style={{ padding: '10px 20px' }}
-              >
+              <button className="btn btn-primary mx-auto px-5 py-2.5" onClick={onOpenTemplates}>
                 <LayoutTemplate size={18} />
                 Browse Templates
               </button>

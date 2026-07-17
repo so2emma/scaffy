@@ -19,9 +19,7 @@ export const RelationshipPanel: React.FC = () => {
 
   if (!sourceNode || !targetNode || !config) return null;
 
-  const handleTypeChange = (type: any) => {
-    updateRelationship(edge.id, { type });
-  };
+  const handleTypeChange = (type: any) => updateRelationship(edge.id, { type });
 
   const handleFieldChange = (key: 'fromField' | 'toField' | 'joinTable', value: string) => {
     updateRelationship(edge.id, { [key]: value });
@@ -33,40 +31,33 @@ export const RelationshipPanel: React.FC = () => {
 
   const handleCascadeToggle = (cascadeOption: string) => {
     const current = config.cascade || [];
-    let updated;
-    if (current.includes(cascadeOption)) {
-      updated = current.filter((c) => c !== cascadeOption);
-    } else {
-      updated = [...current, cascadeOption];
-    }
+    const updated = current.includes(cascadeOption)
+      ? current.filter((c) => c !== cascadeOption)
+      : [...current, cascadeOption];
     updateRelationship(edge.id, { cascade: updated });
   };
 
   return (
-    <div className="sidebar">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 className="sidebar-title" style={{ border: 'none', padding: '0' }}>Relationship Config</h3>
-        <button 
+    <aside className="scroll-thin absolute right-0 top-0 z-20 flex h-full w-80 flex-col gap-5 overflow-y-auto border-l border-border bg-surface p-5 shadow-xl lg:w-96">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-base font-semibold">Relationship Config</h3>
+        <button
           onClick={() => setSelectedEdgeId(null)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+          className="rounded-md p-1 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+          aria-label="Close"
         >
           <X size={18} />
         </button>
       </div>
 
-      <div className="sidebar-section" style={{ fontSize: '0.85rem' }}>
-        <div style={{ color: 'var(--text-muted)' }}>
-          Connection: <strong style={{ color: 'var(--text-primary)' }}>{sourceNode.data.name}</strong> to <strong style={{ color: 'var(--text-primary)' }}>{targetNode.data.name}</strong>
-        </div>
+      <div className="rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-muted">
+        Connection: <strong className="font-semibold text-content">{sourceNode.data.name}</strong> to{' '}
+        <strong className="font-semibold text-content">{targetNode.data.name}</strong>
       </div>
 
-      <div className="sidebar-section">
+      <div className="flex flex-col gap-2">
         <label className="section-label">Relationship Type</label>
-        <select
-          className="text-input"
-          value={config.type}
-          onChange={(e) => handleTypeChange(e.target.value)}
-        >
+        <select className="input" value={config.type} onChange={(e) => handleTypeChange(e.target.value)}>
           <option value="ONE_TO_ONE">One to One (1:1)</option>
           <option value="ONE_TO_MANY">One to Many (1:N)</option>
           <option value="MANY_TO_ONE">Many to One (N:1)</option>
@@ -74,25 +65,25 @@ export const RelationshipPanel: React.FC = () => {
         </select>
       </div>
 
-      <div className="sidebar-section">
+      <div className="flex flex-col gap-3">
         <label className="section-label">Field Mappings</label>
-        
-        <div className="sidebar-field">
-          <label className="field-label">Field name in {sourceNode.data.name} (fromField)</label>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted">Field name in {sourceNode.data.name} (fromField)</label>
           <input
             type="text"
-            className="text-input"
+            className="input"
             value={config.fromField}
             onChange={(e) => handleFieldChange('fromField', e.target.value)}
             placeholder="e.g. author"
           />
         </div>
 
-        <div className="sidebar-field">
-          <label className="field-label">Field name in {targetNode.data.name} (toField - optional)</label>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted">Field name in {targetNode.data.name} (toField - optional)</label>
           <input
             type="text"
-            className="text-input"
+            className="input"
             value={config.toField || ''}
             onChange={(e) => handleFieldChange('toField', e.target.value)}
             placeholder="e.g. books (leave empty for unidirectional)"
@@ -100,38 +91,38 @@ export const RelationshipPanel: React.FC = () => {
         </div>
       </div>
 
-      <div className="sidebar-section">
+      <div className="flex flex-col gap-3">
         <label className="section-label">Nullability (FK Optionality)</label>
-        
-        <div className="sidebar-field-row">
-          <label className="field-label">Is {sourceNode.data.name} reference nullable?</label>
+
+        <label className="flex cursor-pointer items-center justify-between">
+          <span className="text-xs text-muted">Is {sourceNode.data.name} reference nullable?</span>
           <input
             type="checkbox"
-            className="checkbox-input"
+            className="h-4 w-4 cursor-pointer accent-primary"
             checked={config.fromNullable}
             onChange={(e) => handleNullableChange('fromNullable', e.target.checked)}
           />
-        </div>
+        </label>
 
-        <div className="sidebar-field-row">
-          <label className="field-label">Is {targetNode.data.name} reference nullable?</label>
+        <label className="flex cursor-pointer items-center justify-between">
+          <span className="text-xs text-muted">Is {targetNode.data.name} reference nullable?</span>
           <input
             type="checkbox"
-            className="checkbox-input"
+            className="h-4 w-4 cursor-pointer accent-primary"
             checked={config.toNullable}
             onChange={(e) => handleNullableChange('toNullable', e.target.checked)}
           />
-        </div>
+        </label>
       </div>
 
       {config.type === 'MANY_TO_MANY' && (
-        <div className="sidebar-section">
+        <div className="flex flex-col gap-3">
           <label className="section-label">Join Table Details</label>
-          <div className="sidebar-field">
-            <label className="field-label">Join Table Name</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted">Join Table Name</label>
             <input
               type="text"
-              className="text-input"
+              className="input"
               value={config.joinTable || ''}
               onChange={(e) => handleFieldChange('joinTable', e.target.value)}
               placeholder="e.g. author_books"
@@ -140,15 +131,19 @@ export const RelationshipPanel: React.FC = () => {
         </div>
       )}
 
-      <div className="sidebar-section">
+      <div className="flex flex-col gap-2">
         <label className="section-label">JPA Cascade Policies</label>
-        <div className="cascade-chip-group">
+        <div className="flex flex-wrap gap-1.5">
           {['PERSIST', 'MERGE', 'REMOVE'].map((option) => {
             const isSelected = config.cascade?.includes(option);
             return (
               <button
                 key={option}
-                className={`cascade-chip ${isSelected ? 'selected' : ''}`}
+                className={`rounded-md border px-2 py-1 text-[0.7rem] font-medium transition-colors ${
+                  isSelected
+                    ? 'border-primary bg-primary text-primary-fg'
+                    : 'border-border bg-surface-2 text-muted hover:border-border-strong'
+                }`}
                 onClick={() => handleCascadeToggle(option)}
               >
                 {option}
@@ -158,15 +153,14 @@ export const RelationshipPanel: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ marginTop: 'auto' }}>
+      <div className="mt-auto">
         <button
-          className="btn btn-danger"
-          style={{ width: '100%', justifyContent: 'center' }}
+          className="btn btn-danger w-full"
           onClick={() => removeRelationship(edge.id)}
         >
           <Trash2 size={16} /> Delete Relationship
         </button>
       </div>
-    </div>
+    </aside>
   );
 };

@@ -9,7 +9,7 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
   const updateEntityTableName = useDiagramStore((state) => state.updateEntityTableName);
   const updateEntitySoftDelete = useDiagramStore((state) => state.updateEntitySoftDelete);
   const removeEntity = useDiagramStore((state) => state.removeEntity);
-  
+
   const addAttribute = useDiagramStore((state) => state.addAttribute);
   const updateAttribute = useDiagramStore((state) => state.updateAttribute);
   const removeAttribute = useDiagramStore((state) => state.removeAttribute);
@@ -22,9 +22,7 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
   const { name, tableName, attributes } = node.data;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // PascalCase validation hint
-    const val = e.target.value;
-    updateEntityName(id, val);
+    updateEntityName(id, e.target.value);
   };
 
   const handleTableChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,86 +33,97 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
     updateAttribute(id, index, { [key]: val });
   };
 
-  // Helper to edit enum values inline
   const handleEnumValuesChange = (index: number, valueStr: string) => {
-    const values = valueStr.split(',').map(v => v.trim().toUpperCase()).filter(v => v !== '');
+    const values = valueStr.split(',').map((v) => v.trim().toUpperCase()).filter((v) => v !== '');
     updateAttribute(id, index, { enumValues: values });
   };
 
+  const flagBtn = (active: boolean, kind: 'pk' | 'flag') =>
+    `rounded border px-1.5 py-0.5 text-[0.7rem] font-bold transition-colors disabled:opacity-40 ${
+      active
+        ? kind === 'pk'
+          ? 'border-primary bg-primary/15 text-primary'
+          : 'border-border-strong bg-surface-3 text-content'
+        : 'border-transparent text-subtle hover:bg-surface-2'
+    }`;
+
   return (
-    <div className={`entity-node ${selected ? 'selected-node' : ''}`}>
-      {/* Target Handles */}
+    <div
+      className={`w-80 overflow-hidden rounded-xl border bg-surface shadow-lg transition-all ${
+        selected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+      }`}
+    >
       <Handle type="target" position={Position.Top} id="t-top" />
       <Handle type="target" position={Position.Left} id="t-left" />
 
       {/* Header */}
-      <div className="entity-header">
-        <div className="entity-header-row">
+      <div className="flex flex-col gap-1.5 border-b border-border bg-surface-2 px-4 py-3">
+        <div className="flex items-center justify-between">
           <input
             type="text"
-            className="entity-title-input"
+            className="w-[70%] rounded border border-transparent bg-transparent px-1 py-0.5 font-display text-base font-semibold text-content outline-none hover:bg-surface-3 focus:border-primary focus:bg-surface"
             value={name}
             onChange={handleNameChange}
             placeholder="EntityName"
           />
-          <button 
-            className="entity-delete-btn"
-            onClick={(e) => { e.stopPropagation(); removeEntity(id); }}
+          <button
+            className="rounded p-1 text-subtle transition-colors hover:bg-danger/10 hover:text-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeEntity(id);
+            }}
             title="Delete Entity"
           >
             <Trash2 size={14} />
           </button>
         </div>
-        <div className="sidebar-field">
-          <input
-            type="text"
-            className="text-input"
-            style={{ fontSize: '0.7rem', padding: '2px 6px', background: 'rgba(120, 120, 120, 0.15)' }}
-            value={tableName}
-            onChange={handleTableChange}
-            placeholder="table_name (optional)"
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+        <input
+          type="text"
+          className="input !bg-surface-3 !px-2 !py-1 !text-xs"
+          value={tableName}
+          onChange={handleTableChange}
+          placeholder="table_name (optional)"
+        />
+        <div className="mt-1 flex items-center gap-1.5">
           <input
             type="checkbox"
             id={`softdelete-${id}`}
             checked={!!node.data.softDelete}
             onChange={(e) => updateEntitySoftDelete(id, e.target.checked)}
-            style={{ accentColor: 'var(--text-main)', width: '12px', height: '12px', cursor: 'pointer' }}
+            className="h-3 w-3 cursor-pointer accent-primary"
           />
-          <label htmlFor={`softdelete-${id}`} style={{ fontSize: '0.65rem', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+          <label
+            htmlFor={`softdelete-${id}`}
+            className="cursor-pointer select-none text-[0.65rem] text-muted"
+          >
             Soft-Delete (adds deletedAt)
           </label>
         </div>
       </div>
 
-      {/* Attributes List */}
-      <div className="entity-body">
-        <table className="attributes-table">
+      {/* Attributes */}
+      <div className="px-4 py-3">
+        <table className="mb-3 w-full border-collapse">
           <tbody>
             {attributes.map((attr, index) => (
               <React.Fragment key={index}>
-                <tr className="attr-row">
-                  {/* Attr Name */}
-                  <td className="attr-cell" style={{ width: '30%' }}>
+                <tr className="border-b border-border last:border-b-0">
+                  <td className="w-[30%] py-1.5 pr-1 align-middle">
                     <input
                       type="text"
-                      className="attr-input-name"
+                      className="w-full rounded border border-transparent bg-transparent p-0.5 text-[0.775rem] text-content outline-none focus:border-primary focus:bg-surface-2"
                       value={attr.name}
                       onChange={(e) => handleAttributeChange(index, 'name', e.target.value)}
                       placeholder="field"
                     />
                   </td>
 
-                  {/* Attr Type */}
-                  <td className="attr-cell" style={{ width: '28%' }}>
+                  <td className="w-[28%] py-1.5 pr-1 align-middle">
                     <select
-                      className="attr-select-type"
+                      className="w-full cursor-pointer rounded border border-border bg-surface-2 px-1 py-0.5 text-[0.725rem] text-muted outline-none focus:border-primary"
                       value={attr.type}
                       onChange={(e) => {
                         handleAttributeChange(index, 'type', e.target.value);
-                        // Reset validation if type changes to non-String
                         if (e.target.value !== 'String') {
                           updateAttributeValidation(id, index, { email: false, minSize: null, maxSize: null });
                         }
@@ -132,23 +141,20 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
                     </select>
                   </td>
 
-                  {/* Flags PK, NN, UQ */}
-                  <td className="attr-cell" style={{ width: '30%' }}>
-                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'flex-end' }}>
+                  <td className="w-[30%] py-1.5 pr-1 align-middle">
+                    <div className="flex justify-end gap-0.5">
                       <button
-                        className={`attr-flag-btn ${attr.primaryKey ? 'active-pk' : ''}`}
+                        className={flagBtn(attr.primaryKey, 'pk')}
                         onClick={() => {
                           handleAttributeChange(index, 'primaryKey', !attr.primaryKey);
-                          if (!attr.primaryKey) {
-                            handleAttributeChange(index, 'nullable', false);
-                          }
+                          if (!attr.primaryKey) handleAttributeChange(index, 'nullable', false);
                         }}
                         title="Primary Key"
                       >
                         PK
                       </button>
                       <button
-                        className={`attr-flag-btn ${!attr.nullable ? 'active' : ''}`}
+                        className={flagBtn(!attr.nullable, 'flag')}
                         disabled={attr.primaryKey}
                         onClick={() => handleAttributeChange(index, 'nullable', !attr.nullable)}
                         title="Not Null"
@@ -156,7 +162,7 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
                         NN
                       </button>
                       <button
-                        className={`attr-flag-btn ${attr.unique ? 'active' : ''}`}
+                        className={flagBtn(attr.unique, 'flag')}
                         onClick={() => handleAttributeChange(index, 'unique', !attr.unique)}
                         title="Unique"
                       >
@@ -165,19 +171,21 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
                     </div>
                   </td>
 
-                  {/* Settings & Delete */}
-                  <td className="attr-cell" style={{ width: '12%', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <td className="w-[12%] py-1.5 text-right align-middle">
+                    <div className="flex items-center justify-end gap-1">
                       <button
-                        className={`attr-flag-btn ${expandedIndex === index ? 'active' : ''}`}
+                        className={`rounded border px-1 py-0.5 transition-colors ${
+                          expandedIndex === index
+                            ? 'border-border-strong bg-surface-3 text-content'
+                            : 'border-transparent text-subtle hover:bg-surface-2'
+                        }`}
                         onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
                         title="Validation Settings"
-                        style={{ padding: '2px 4px', fontSize: '0.6rem' }}
                       >
                         <Settings size={10} />
                       </button>
                       <button
-                        className="attr-delete-btn"
+                        className="text-subtle transition-colors hover:text-danger"
                         onClick={() => {
                           if (expandedIndex === index) setExpandedIndex(null);
                           removeAttribute(id, index);
@@ -189,57 +197,60 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
                   </td>
                 </tr>
 
-                {/* Custom Validation Expandable Panel */}
                 {expandedIndex === index && (
-                  <tr className="validation-row">
-                    <td colSpan={4} className="attr-cell" style={{ background: 'rgba(120, 120, 120, 0.08)', padding: '6px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>
-                          Validation rules:
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', cursor: 'pointer' }}>
+                  <tr>
+                    <td colSpan={4} className="bg-surface-2 p-1.5">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="text-[0.65rem] font-bold text-muted">Validation rules:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="flex cursor-pointer items-center gap-1 text-[0.65rem]">
                             <input
                               type="checkbox"
                               checked={!!attr.validation?.required}
                               onChange={(e) => updateAttributeValidation(id, index, { required: e.target.checked })}
-                              style={{ accentColor: 'var(--text-main)', width: '11px', height: '11px' }}
+                              className="h-3 w-3 accent-primary"
                             />
                             <span>Required</span>
                           </label>
 
                           {attr.type === 'String' && (
                             <>
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', cursor: 'pointer' }}>
+                              <label className="flex cursor-pointer items-center gap-1 text-[0.65rem]">
                                 <input
                                   type="checkbox"
                                   checked={!!attr.validation?.email}
                                   onChange={(e) => updateAttributeValidation(id, index, { email: e.target.checked })}
-                                  style={{ accentColor: 'var(--text-main)', width: '11px', height: '11px' }}
+                                  className="h-3 w-3 accent-primary"
                                 />
                                 <span>Email</span>
                               </label>
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.65rem' }}>
+                              <div className="flex items-center gap-1 text-[0.65rem]">
                                 <span>Min:</span>
                                 <input
                                   type="number"
-                                  className="text-input"
-                                  style={{ width: '42px', padding: '1px 3px', fontSize: '0.65rem', height: '18px', background: 'rgba(120, 120, 120, 0.15)' }}
+                                  className="input h-[18px] w-11 !bg-surface-3 !p-0.5 !text-[0.65rem]"
                                   value={attr.validation?.minSize ?? ''}
-                                  onChange={(e) => updateAttributeValidation(id, index, { minSize: e.target.value ? parseInt(e.target.value) : null })}
+                                  onChange={(e) =>
+                                    updateAttributeValidation(id, index, {
+                                      minSize: e.target.value ? parseInt(e.target.value) : null,
+                                    })
+                                  }
                                   placeholder="0"
                                 />
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '0.65rem' }}>
+                              <div className="flex items-center gap-1 text-[0.65rem]">
                                 <span>Max:</span>
                                 <input
                                   type="number"
-                                  className="text-input"
-                                  style={{ width: '42px', padding: '1px 3px', fontSize: '0.65rem', height: '18px', background: 'rgba(120, 120, 120, 0.15)' }}
+                                  className="input h-[18px] w-11 !bg-surface-3 !p-0.5 !text-[0.65rem]"
                                   value={attr.validation?.maxSize ?? ''}
-                                  onChange={(e) => updateAttributeValidation(id, index, { maxSize: e.target.value ? parseInt(e.target.value) : null })}
+                                  onChange={(e) =>
+                                    updateAttributeValidation(id, index, {
+                                      maxSize: e.target.value ? parseInt(e.target.value) : null,
+                                    })
+                                  }
                                   placeholder="255"
                                 />
                               </div>
@@ -255,27 +266,30 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
           </tbody>
         </table>
 
-        {/* Enum values editor row */}
-        {attributes.map((attr, index) => attr.type === 'Enum' && (
-          <div key={`enum-${index}`} className="enum-editor">
-            <div className="input-label" style={{ fontSize: '0.6rem' }}>Enum values (comma separated)</div>
-            <input
-              type="text"
-              className="text-input"
-              style={{ width: '100%', fontSize: '0.7rem', padding: '2px 6px' }}
-              value={attr.enumValues?.join(', ') || ''}
-              onChange={(e) => handleEnumValuesChange(index, e.target.value)}
-              placeholder="PENDING, SHIPPED, DELIVERED"
-            />
-          </div>
-        ))}
+        {attributes.map(
+          (attr, index) =>
+            attr.type === 'Enum' && (
+              <div key={`enum-${index}`} className="mb-2 rounded-lg border border-border bg-surface-2 p-2.5">
+                <div className="field-label mb-1 !text-[0.6rem]">Enum values (comma separated)</div>
+                <input
+                  type="text"
+                  className="input !py-0.5 !text-xs"
+                  value={attr.enumValues?.join(', ') || ''}
+                  onChange={(e) => handleEnumValuesChange(index, e.target.value)}
+                  placeholder="PENDING, SHIPPED, DELIVERED"
+                />
+              </div>
+            )
+        )}
 
-        <button className="add-attr-btn" onClick={() => addAttribute(id)}>
+        <button
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-1.5 text-xs text-muted transition-colors hover:border-primary hover:text-content"
+          onClick={() => addAttribute(id)}
+        >
           <Plus size={12} /> Add Attribute
         </button>
       </div>
 
-      {/* Source Handles */}
       <Handle type="source" position={Position.Bottom} id="s-bottom" />
       <Handle type="source" position={Position.Right} id="s-right" />
     </div>

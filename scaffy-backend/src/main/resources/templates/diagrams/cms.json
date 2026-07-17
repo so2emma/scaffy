@@ -1,438 +1,193 @@
 {
   "id": "cms",
   "name": "Content Management System",
-  "description": "CMS with articles, categories, tags, comments, and media management",
+  "description": "Headless CMS with articles, categories, tags, comments, media library, pages, and navigation menus.",
   "category": "Content",
   "icon": "FileText",
-  "entityCount": 10,
+  "entityCount": 11,
   "diagram": {
     "projectName": "my-cms",
-    "basePackage": "com.example",
+    "basePackage": "com.example.cms",
     "targetFramework": "SPRING_BOOT",
     "entities": [
       {
         "name": "User",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "username",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "email",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "password",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "role",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "active",
-            "type": "Boolean",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "username", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "minSize": 3, "maxSize": 30 } },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "password", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 8, "maxSize": 100 } },
+          { "name": "role", "type": "Enum", "nullable": false, "enumValues": ["ADMIN", "EDITOR", "AUTHOR", "CONTRIBUTOR"] },
+          { "name": "active", "type": "Boolean", "nullable": false }
         ]
       },
       {
         "name": "Article",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "title",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "excerpt",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "version",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "publishedAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          },
-          {
-            "name": "updatedAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "title", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 3, "maxSize": 200 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 220 } },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true } },
+          { "name": "excerpt", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["DRAFT", "IN_REVIEW", "PUBLISHED", "ARCHIVED"] },
+          { "name": "version", "type": "Integer", "nullable": false },
+          { "name": "publishedAt", "type": "LocalDateTime", "nullable": true },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "updatedAt", "type": "LocalDateTime", "nullable": true }
         ]
       },
       {
         "name": "Category",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "parentId",
-            "type": "Long",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "parentId", "type": "Long", "nullable": true }
         ]
       },
       {
         "name": "Tag",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          }
-        ]
-      },
-      {
-        "id": "articleTag",
-        "name": "ArticleTag",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 80 } }
         ]
       },
       {
         "name": "Comment",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "approved",
-            "type": "Boolean",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 2000 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "APPROVED", "SPAM", "REJECTED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Media",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "filename",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "url",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "mimeType",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "size",
-            "type": "Long",
-            "nullable": false
-          },
-          {
-            "name": "altText",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "uploadedAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "filename", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 255 } },
+          { "name": "url", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 500 } },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["IMAGE", "VIDEO", "AUDIO", "DOCUMENT"] },
+          { "name": "mimeType", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "size", "type": "Long", "nullable": false },
+          { "name": "altText", "type": "String", "nullable": true, "validation": { "maxSize": 255 } },
+          { "name": "uploadedAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Page",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "title",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "template",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "title", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 200 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 220 } },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["DRAFT", "PUBLISHED", "ARCHIVED"] },
+          { "name": "template", "type": "String", "nullable": true, "validation": { "maxSize": 80 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Menu",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "location",
-            "type": "String",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "location", "type": "Enum", "nullable": false, "enumValues": ["HEADER", "FOOTER", "SIDEBAR"] }
         ]
       },
       {
-        "id": "menuItem",
         "name": "MenuItem",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "label",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "url",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "order",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "parentId",
-            "type": "Long",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "label", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "url", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 300 } },
+          { "name": "position", "type": "Integer", "nullable": false },
+          { "name": "parentId", "type": "Long", "nullable": true }
+        ]
+      },
+      {
+        "name": "Revision",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true } },
+          { "name": "versionNumber", "type": "Integer", "nullable": false },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "SeoMetadata",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "metaTitle", "type": "String", "nullable": true, "validation": { "maxSize": 160 } },
+          { "name": "metaDescription", "type": "String", "nullable": true, "validation": { "maxSize": 320 } },
+          { "name": "canonicalUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "ogImageUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } }
         ]
       }
     ],
     "relationships": [
       {
-        "from": "User",
-        "to": "Article",
-        "type": "ONE_TO_MANY",
-        "fromField": "articles",
-        "toField": "author",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Article", "type": "ONE_TO_MANY",
+        "fromField": "articles", "toField": "author",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Article",
-        "to": "Category",
-        "type": "MANY_TO_ONE",
-        "fromField": "category",
-        "toField": "articles",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Article", "to": "Category", "type": "MANY_TO_ONE",
+        "fromField": "category", "toField": "articles",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Article",
-        "to": "ArticleTag",
-        "type": "ONE_TO_MANY",
-        "fromField": "articleTags",
-        "toField": "article",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Article", "to": "Tag", "type": "MANY_TO_MANY",
+        "fromField": "tags", "toField": "articles",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "article_tags"
       },
       {
-        "from": "ArticleTag",
-        "to": "Tag",
-        "type": "MANY_TO_ONE",
-        "fromField": "tag",
-        "toField": "articleTags",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Article", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "article",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Article",
-        "to": "Comment",
-        "type": "ONE_TO_MANY",
-        "fromField": "comments",
-        "toField": "article",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "author",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Comment",
-        "type": "ONE_TO_MANY",
-        "fromField": "comments",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Article", "to": "Media", "type": "ONE_TO_MANY",
+        "fromField": "media", "toField": "article",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Article",
-        "to": "Media",
-        "type": "ONE_TO_MANY",
-        "fromField": "media",
-        "toField": "article",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Article", "to": "Revision", "type": "ONE_TO_MANY",
+        "fromField": "revisions", "toField": "article",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Menu",
-        "to": "MenuItem",
-        "type": "ONE_TO_MANY",
-        "fromField": "items",
-        "toField": "menu",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Article", "to": "SeoMetadata", "type": "ONE_TO_ONE",
+        "fromField": "seo", "toField": "article",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Page", "to": "SeoMetadata", "type": "ONE_TO_ONE",
+        "fromField": "seo", "toField": "page",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Menu", "to": "MenuItem", "type": "ONE_TO_MANY",
+        "fromField": "items", "toField": "menu",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       }
     ]
   }

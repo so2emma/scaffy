@@ -1,0 +1,185 @@
+{
+  "id": "hotel-booking",
+  "name": "Hotel Booking",
+  "description": "Hotel reservation platform with properties, room types, rooms, guests, bookings, payments, and reviews.",
+  "category": "Hospitality",
+  "icon": "Hotel",
+  "entityCount": 10,
+  "diagram": {
+    "projectName": "my-hotel-booking",
+    "basePackage": "com.example.hotel",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "Hotel",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 150 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 2000 } },
+          { "name": "starRating", "type": "Integer", "nullable": true },
+          { "name": "checkInTime", "type": "String", "nullable": true, "validation": { "maxSize": 10 } },
+          { "name": "checkOutTime", "type": "String", "nullable": true, "validation": { "maxSize": 10 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Address",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "street", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 200 } },
+          { "name": "city", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "country", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "postalCode", "type": "String", "nullable": true, "validation": { "maxSize": 20 } },
+          { "name": "latitude", "type": "BigDecimal", "nullable": true },
+          { "name": "longitude", "type": "BigDecimal", "nullable": true }
+        ]
+      },
+      {
+        "name": "RoomType",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } },
+          { "name": "basePrice", "type": "BigDecimal", "nullable": false },
+          { "name": "maxOccupancy", "type": "Integer", "nullable": false },
+          { "name": "bedType", "type": "Enum", "nullable": false, "enumValues": ["SINGLE", "DOUBLE", "QUEEN", "KING", "TWIN"] }
+        ]
+      },
+      {
+        "name": "Room",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "roomNumber", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 20 } },
+          { "name": "floor", "type": "Integer", "nullable": true },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["AVAILABLE", "OCCUPIED", "MAINTENANCE", "OUT_OF_SERVICE"] }
+        ]
+      },
+      {
+        "name": "Amenity",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "icon", "type": "String", "nullable": true, "validation": { "maxSize": 60 } }
+        ]
+      },
+      {
+        "name": "Guest",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "firstName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "lastName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "phone", "type": "String", "nullable": true, "validation": { "maxSize": 30 } },
+          { "name": "loyaltyTier", "type": "Enum", "nullable": false, "enumValues": ["NONE", "SILVER", "GOLD", "PLATINUM"] }
+        ]
+      },
+      {
+        "name": "Booking",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "confirmationCode", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 20 } },
+          { "name": "checkInDate", "type": "LocalDate", "nullable": false },
+          { "name": "checkOutDate", "type": "LocalDate", "nullable": false },
+          { "name": "numberOfGuests", "type": "Integer", "nullable": false },
+          { "name": "totalPrice", "type": "BigDecimal", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT", "CANCELLED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Payment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "amount", "type": "BigDecimal", "nullable": false },
+          { "name": "method", "type": "Enum", "nullable": false, "enumValues": ["CREDIT_CARD", "DEBIT_CARD", "CASH", "BANK_TRANSFER"] },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "PAID", "REFUNDED", "FAILED"] },
+          { "name": "paidAt", "type": "LocalDateTime", "nullable": true }
+        ]
+      },
+      {
+        "name": "Review",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "rating", "type": "Integer", "nullable": false },
+          { "name": "comment", "type": "String", "nullable": true, "validation": { "maxSize": 1500 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Promotion",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "code", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "discountPercent", "type": "Integer", "nullable": false },
+          { "name": "validFrom", "type": "LocalDate", "nullable": false },
+          { "name": "validUntil", "type": "LocalDate", "nullable": false },
+          { "name": "active", "type": "Boolean", "nullable": false }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Hotel", "to": "Address", "type": "ONE_TO_ONE",
+        "fromField": "address", "toField": "hotel",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Hotel", "to": "RoomType", "type": "ONE_TO_MANY",
+        "fromField": "roomTypes", "toField": "hotel",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "RoomType", "to": "Room", "type": "ONE_TO_MANY",
+        "fromField": "rooms", "toField": "roomType",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Hotel", "to": "Amenity", "type": "MANY_TO_MANY",
+        "fromField": "amenities", "toField": "hotels",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "hotel_amenities"
+      },
+      {
+        "from": "Guest", "to": "Booking", "type": "ONE_TO_MANY",
+        "fromField": "bookings", "toField": "guest",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Room", "to": "Booking", "type": "ONE_TO_MANY",
+        "fromField": "bookings", "toField": "room",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Booking", "to": "Payment", "type": "ONE_TO_MANY",
+        "fromField": "payments", "toField": "booking",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Booking", "to": "Promotion", "type": "MANY_TO_ONE",
+        "fromField": "promotion", "toField": "bookings",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Booking", "to": "Review", "type": "ONE_TO_ONE",
+        "fromField": "review", "toField": "booking",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Hotel", "to": "Review", "type": "ONE_TO_MANY",
+        "fromField": "reviews", "toField": "hotel",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      }
+    ]
+  }
+}

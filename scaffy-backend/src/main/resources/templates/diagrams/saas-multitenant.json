@@ -1,426 +1,207 @@
 {
   "id": "saas-multitenant",
   "name": "SaaS Multi-Tenant",
-  "description": "Multi-tenant SaaS platform with subscriptions, roles, and audit logs",
+  "description": "Multi-tenant SaaS backend with organizations, RBAC, subscription billing, invoices, API keys, and audit logs.",
   "category": "Platform",
   "icon": "Building2",
-  "entityCount": 9,
+  "entityCount": 11,
   "diagram": {
     "projectName": "my-saas-platform",
-    "basePackage": "com.example",
+    "basePackage": "com.example.saas",
     "targetFramework": "SPRING_BOOT",
     "entities": [
       {
         "name": "Tenant",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "domain",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "domain", "type": "String", "nullable": true, "validation": { "maxSize": 150 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["TRIAL", "ACTIVE", "SUSPENDED", "CANCELLED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "User",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "tenantId",
-            "type": "Long",
-            "nullable": false
-          },
-          {
-            "name": "email",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "password",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "firstName",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "lastName",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "active",
-            "type": "Boolean",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "email", "type": "String", "nullable": false, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "password", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 8, "maxSize": 100 } },
+          { "name": "firstName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "lastName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["INVITED", "ACTIVE", "DISABLED"] },
+          { "name": "lastLoginAt", "type": "LocalDateTime", "nullable": true },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Role",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "isSystemRole",
-            "type": "Boolean",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 255 } },
+          { "name": "isSystemRole", "type": "Boolean", "nullable": false }
         ]
       },
       {
         "name": "Permission",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "resource",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "action",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "resource", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "action", "type": "Enum", "nullable": false, "enumValues": ["CREATE", "READ", "UPDATE", "DELETE", "MANAGE"] },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 255 } }
         ]
       },
       {
-        "id": "rolePermission",
         "name": "RolePermission",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          }
-        ]
-      },
-      {
-        "name": "Subscription",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "startDate",
-            "type": "LocalDateTime",
-            "nullable": false
-          },
-          {
-            "name": "endDate",
-            "type": "LocalDateTime",
-            "nullable": true
-          },
-          {
-            "name": "autoRenew",
-            "type": "Boolean",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true }
         ]
       },
       {
         "name": "Plan",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "price",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "billingPeriod",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "maxUsers",
-            "type": "Integer",
-            "nullable": true
-          },
-          {
-            "name": "features",
-            "type": "String",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "price", "type": "BigDecimal", "nullable": false },
+          { "name": "billingPeriod", "type": "Enum", "nullable": false, "enumValues": ["MONTHLY", "QUARTERLY", "ANNUAL"] },
+          { "name": "maxUsers", "type": "Integer", "nullable": true },
+          { "name": "features", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } }
+        ]
+      },
+      {
+        "name": "Subscription",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELLED"] },
+          { "name": "startDate", "type": "LocalDateTime", "nullable": false },
+          { "name": "endDate", "type": "LocalDateTime", "nullable": true },
+          { "name": "autoRenew", "type": "Boolean", "nullable": false }
         ]
       },
       {
         "name": "Invoice",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "invoiceNumber",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "amount",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "dueDate",
-            "type": "LocalDateTime",
-            "nullable": false
-          },
-          {
-            "name": "paidAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "invoiceNumber", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "amount", "type": "BigDecimal", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["DRAFT", "OPEN", "PAID", "VOID", "OVERDUE"] },
+          { "name": "dueDate", "type": "LocalDateTime", "nullable": false },
+          { "name": "paidAt", "type": "LocalDateTime", "nullable": true },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
-        "id": "auditLog",
+        "name": "ApiKey",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "keyHash", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 128 } },
+          { "name": "prefix", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 12 } },
+          { "name": "lastUsedAt", "type": "LocalDateTime", "nullable": true },
+          { "name": "revoked", "type": "Boolean", "nullable": false },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
         "name": "AuditLog",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "tenantId",
-            "type": "Long",
-            "nullable": false
-          },
-          {
-            "name": "userId",
-            "type": "Long",
-            "nullable": true
-          },
-          {
-            "name": "action",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "resource",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "resourceId",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "ipAddress",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "timestamp",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "action", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "resource", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "resourceId", "type": "String", "nullable": true, "validation": { "maxSize": 80 } },
+          { "name": "ipAddress", "type": "String", "nullable": true, "validation": { "maxSize": 45 } },
+          { "name": "timestamp", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Invitation",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "email", "type": "String", "nullable": false, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "token", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 128 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "ACCEPTED", "EXPIRED", "REVOKED"] },
+          { "name": "expiresAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       }
     ],
     "relationships": [
       {
-        "from": "Tenant",
-        "to": "User",
-        "type": "ONE_TO_MANY",
-        "fromField": "users",
-        "toField": "tenant",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Tenant", "to": "User", "type": "ONE_TO_MANY",
+        "fromField": "users", "toField": "tenant",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Role",
-        "type": "MANY_TO_ONE",
-        "fromField": "role",
-        "toField": "users",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Tenant", "to": "Role", "type": "ONE_TO_MANY",
+        "fromField": "roles", "toField": "tenant",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Role",
-        "to": "RolePermission",
-        "type": "ONE_TO_MANY",
-        "fromField": "rolePermissions",
-        "toField": "role",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Role", "type": "MANY_TO_ONE",
+        "fromField": "role", "toField": "users",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "RolePermission",
-        "to": "Permission",
-        "type": "MANY_TO_ONE",
-        "fromField": "permission",
-        "toField": "rolePermissions",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Role", "to": "RolePermission", "type": "ONE_TO_MANY",
+        "fromField": "rolePermissions", "toField": "role",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Tenant",
-        "to": "Subscription",
-        "type": "ONE_TO_ONE",
-        "fromField": "subscription",
-        "toField": "tenant",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "RolePermission", "to": "Permission", "type": "MANY_TO_ONE",
+        "fromField": "permission", "toField": "rolePermissions",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Subscription",
-        "to": "Plan",
-        "type": "MANY_TO_ONE",
-        "fromField": "plan",
-        "toField": "subscriptions",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Tenant", "to": "Subscription", "type": "ONE_TO_ONE",
+        "fromField": "subscription", "toField": "tenant",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Tenant",
-        "to": "Invoice",
-        "type": "ONE_TO_MANY",
-        "fromField": "invoices",
-        "toField": "tenant",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Subscription", "to": "Plan", "type": "MANY_TO_ONE",
+        "fromField": "plan", "toField": "subscriptions",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Tenant",
-        "to": "AuditLog",
-        "type": "ONE_TO_MANY",
-        "fromField": "auditLogs",
-        "toField": "tenant",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Subscription", "to": "Invoice", "type": "ONE_TO_MANY",
+        "fromField": "invoices", "toField": "subscription",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Tenant", "to": "ApiKey", "type": "ONE_TO_MANY",
+        "fromField": "apiKeys", "toField": "tenant",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Tenant", "to": "Invitation", "type": "ONE_TO_MANY",
+        "fromField": "invitations", "toField": "tenant",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Tenant", "to": "AuditLog", "type": "ONE_TO_MANY",
+        "fromField": "auditLogs", "toField": "tenant",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "AuditLog", "type": "ONE_TO_MANY",
+        "fromField": "auditLogs", "toField": "actor",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       }
     ]
   }

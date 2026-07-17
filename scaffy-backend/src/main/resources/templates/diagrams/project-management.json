@@ -1,0 +1,197 @@
+{
+  "id": "project-management",
+  "name": "Project Management",
+  "description": "Agile project tracker with workspaces, projects, boards, tasks, sprints, comments, and time logs.",
+  "category": "Productivity",
+  "icon": "KanbanSquare",
+  "entityCount": 10,
+  "diagram": {
+    "projectName": "my-project-tracker",
+    "basePackage": "com.example.pm",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "User",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "password", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 8, "maxSize": 100 } },
+          { "name": "fullName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "avatarUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Workspace",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Project",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "key", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 10 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Board",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["KANBAN", "SCRUM"] }
+        ]
+      },
+      {
+        "name": "Sprint",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "goal", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PLANNED", "ACTIVE", "COMPLETED"] },
+          { "name": "startDate", "type": "LocalDate", "nullable": true },
+          { "name": "endDate", "type": "LocalDate", "nullable": true }
+        ]
+      },
+      {
+        "name": "Task",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "title", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 3, "maxSize": 200 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 4000 } },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["STORY", "BUG", "TASK", "EPIC"] },
+          { "name": "priority", "type": "Enum", "nullable": false, "enumValues": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"] },
+          { "name": "storyPoints", "type": "Integer", "nullable": true },
+          { "name": "dueDate", "type": "LocalDateTime", "nullable": true },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Label",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "color", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 7 } }
+        ]
+      },
+      {
+        "name": "Comment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 4000 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Attachment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "filename", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 255 } },
+          { "name": "url", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 500 } },
+          { "name": "sizeBytes", "type": "Long", "nullable": false },
+          { "name": "uploadedAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "TimeLog",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "minutesSpent", "type": "Integer", "nullable": false },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "loggedAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Workspace", "to": "Project", "type": "ONE_TO_MANY",
+        "fromField": "projects", "toField": "workspace",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Workspace", "to": "User", "type": "MANY_TO_MANY",
+        "fromField": "members", "toField": "workspaces",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "workspace_members"
+      },
+      {
+        "from": "Project", "to": "Board", "type": "ONE_TO_MANY",
+        "fromField": "boards", "toField": "project",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Project", "to": "Sprint", "type": "ONE_TO_MANY",
+        "fromField": "sprints", "toField": "project",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Board", "to": "Task", "type": "ONE_TO_MANY",
+        "fromField": "tasks", "toField": "board",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Sprint", "to": "Task", "type": "ONE_TO_MANY",
+        "fromField": "tasks", "toField": "sprint",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "Task", "type": "ONE_TO_MANY",
+        "fromField": "assignedTasks", "toField": "assignee",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Task", "to": "Label", "type": "MANY_TO_MANY",
+        "fromField": "labels", "toField": "tasks",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "task_labels"
+      },
+      {
+        "from": "Task", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "task",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "author",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Task", "to": "Attachment", "type": "ONE_TO_MANY",
+        "fromField": "attachments", "toField": "task",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Task", "to": "TimeLog", "type": "ONE_TO_MANY",
+        "fromField": "timeLogs", "toField": "task",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "TimeLog", "type": "ONE_TO_MANY",
+        "fromField": "timeLogs", "toField": "user",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      }
+    ]
+  }
+}

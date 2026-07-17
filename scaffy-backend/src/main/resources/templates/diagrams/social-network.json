@@ -1,400 +1,213 @@
 {
   "id": "social-network",
   "name": "Social Network",
-  "description": "Social platform with posts, comments, likes, messages, and friendships",
+  "description": "Social platform with profiles, posts, comments, likes, follows, direct messages, groups, and notifications.",
   "category": "Social",
   "icon": "Users",
-  "entityCount": 10,
+  "entityCount": 12,
   "diagram": {
     "projectName": "my-social-network",
-    "basePackage": "com.example",
+    "basePackage": "com.example.social",
     "targetFramework": "SPRING_BOOT",
     "entities": [
       {
         "name": "User",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "username",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "email",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "password",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "username", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "minSize": 3, "maxSize": 30 } },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "password", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 8, "maxSize": 100 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["ACTIVE", "DEACTIVATED", "BANNED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Profile",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "bio",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "avatarUrl",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "coverPhotoUrl",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "location",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "website",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "birthDate",
-            "type": "LocalDate",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "displayName", "type": "String", "nullable": true, "validation": { "maxSize": 80 } },
+          { "name": "bio", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "avatarUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "coverPhotoUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "location", "type": "String", "nullable": true, "validation": { "maxSize": 120 } },
+          { "name": "website", "type": "String", "nullable": true, "validation": { "maxSize": 200 } },
+          { "name": "birthDate", "type": "LocalDate", "nullable": true }
         ]
       },
       {
         "name": "Post",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "imageUrl",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "visibility",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          },
-          {
-            "name": "updatedAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 5000 } },
+          { "name": "imageUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "visibility", "type": "Enum", "nullable": false, "enumValues": ["PUBLIC", "FRIENDS", "PRIVATE"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "updatedAt", "type": "LocalDateTime", "nullable": true }
         ]
       },
       {
         "name": "Comment",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 1000 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
-        "name": "Like",
+        "name": "Reaction",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["LIKE", "LOVE", "HAHA", "WOW", "SAD", "ANGRY"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
-        "name": "Friendship",
+        "name": "Follow",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "userId1",
-            "type": "Long",
-            "nullable": false
-          },
-          {
-            "name": "userId2",
-            "type": "Long",
-            "nullable": false
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Conversation",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "topic", "type": "String", "nullable": true, "validation": { "maxSize": 120 } },
+          { "name": "isGroup", "type": "Boolean", "nullable": false },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Message",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "content",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "read",
-            "type": "Boolean",
-            "nullable": false
-          },
-          {
-            "name": "sentAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "content", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 4000 } },
+          { "name": "read", "type": "Boolean", "nullable": false },
+          { "name": "sentAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Group",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } },
+          { "name": "privacy", "type": "Enum", "nullable": false, "enumValues": ["PUBLIC", "PRIVATE", "SECRET"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "GroupMembership",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "role", "type": "Enum", "nullable": false, "enumValues": ["MEMBER", "MODERATOR", "ADMIN"] },
+          { "name": "joinedAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Notification",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "type",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "message",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "read",
-            "type": "Boolean",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["FOLLOW", "COMMENT", "REACTION", "MESSAGE", "MENTION"] },
+          { "name": "message", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 255 } },
+          { "name": "read", "type": "Boolean", "nullable": false },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
-        "name": "Tag",
+        "name": "Hashtag",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          }
-        ]
-      },
-      {
-        "id": "postTag",
-        "name": "PostTag",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 80 } }
         ]
       }
     ],
     "relationships": [
       {
-        "from": "User",
-        "to": "Profile",
-        "type": "ONE_TO_ONE",
-        "fromField": "profile",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Profile", "type": "ONE_TO_ONE",
+        "fromField": "profile", "toField": "user",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Post",
-        "type": "ONE_TO_MANY",
-        "fromField": "posts",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Post", "type": "ONE_TO_MANY",
+        "fromField": "posts", "toField": "author",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Post",
-        "to": "Comment",
-        "type": "ONE_TO_MANY",
-        "fromField": "comments",
-        "toField": "post",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Post", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "post",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Comment",
-        "type": "ONE_TO_MANY",
-        "fromField": "comments",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Comment", "type": "ONE_TO_MANY",
+        "fromField": "comments", "toField": "author",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Like",
-        "type": "ONE_TO_MANY",
-        "fromField": "likes",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Post", "to": "Reaction", "type": "ONE_TO_MANY",
+        "fromField": "reactions", "toField": "post",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Post",
-        "to": "Like",
-        "type": "ONE_TO_MANY",
-        "fromField": "likes",
-        "toField": "post",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Reaction", "type": "ONE_TO_MANY",
+        "fromField": "reactions", "toField": "user",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Message",
-        "type": "ONE_TO_MANY",
-        "fromField": "sentMessages",
-        "toField": "sender",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Follow", "type": "ONE_TO_MANY",
+        "fromField": "following", "toField": "follower",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Notification",
-        "type": "ONE_TO_MANY",
-        "fromField": "notifications",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Follow", "type": "ONE_TO_MANY",
+        "fromField": "followers", "toField": "followee",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Post",
-        "to": "PostTag",
-        "type": "ONE_TO_MANY",
-        "fromField": "postTags",
-        "toField": "post",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Conversation", "to": "Message", "type": "ONE_TO_MANY",
+        "fromField": "messages", "toField": "conversation",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "PostTag",
-        "to": "Tag",
-        "type": "MANY_TO_ONE",
-        "fromField": "tag",
-        "toField": "postTags",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Message", "type": "ONE_TO_MANY",
+        "fromField": "sentMessages", "toField": "sender",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Group", "to": "GroupMembership", "type": "ONE_TO_MANY",
+        "fromField": "memberships", "toField": "group",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "GroupMembership", "type": "ONE_TO_MANY",
+        "fromField": "groupMemberships", "toField": "user",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "User", "to": "Notification", "type": "ONE_TO_MANY",
+        "fromField": "notifications", "toField": "recipient",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Post", "to": "Hashtag", "type": "MANY_TO_MANY",
+        "fromField": "hashtags", "toField": "posts",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "post_hashtags"
       }
     ]
   }

@@ -1,445 +1,228 @@
 {
   "id": "ecommerce",
   "name": "E-Commerce",
-  "description": "Complete online store with products, orders, payments, and reviews",
+  "description": "Full-featured online store: catalog with variants, cart, orders, payments, shipments, reviews, and coupons.",
   "category": "Commerce",
   "icon": "ShoppingCart",
-  "entityCount": 9,
+  "entityCount": 12,
   "diagram": {
     "projectName": "my-ecommerce",
-    "basePackage": "com.example",
+    "basePackage": "com.example.ecommerce",
     "targetFramework": "SPRING_BOOT",
     "entities": [
       {
         "name": "User",
+        "softDelete": true,
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "email",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "password",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "firstName",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "lastName",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "phone",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
-        ]
-      },
-      {
-        "name": "Product",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "price",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "sku",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "stock",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "active",
-            "type": "Boolean",
-            "nullable": false
-          },
-          {
-            "name": "imageUrl",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
-        ]
-      },
-      {
-        "name": "Category",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "name",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "description",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "slug",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          }
-        ]
-      },
-      {
-        "name": "Order",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "orderNumber",
-            "type": "String",
-            "nullable": false,
-            "unique": true
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "totalAmount",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          },
-          {
-            "name": "updatedAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          }
-        ]
-      },
-      {
-        "id": "orderItem",
-        "name": "OrderItem",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "quantity",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "unitPrice",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "subtotal",
-            "type": "BigDecimal",
-            "nullable": false
-          }
-        ]
-      },
-      {
-        "name": "Payment",
-        "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "paymentMethod",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "amount",
-            "type": "BigDecimal",
-            "nullable": false
-          },
-          {
-            "name": "status",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "transactionId",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "paidAt",
-            "type": "LocalDateTime",
-            "nullable": true
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "password", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 8, "maxSize": 100 } },
+          { "name": "firstName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "lastName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "phone", "type": "String", "nullable": true, "validation": { "maxSize": 30 } },
+          { "name": "role", "type": "Enum", "nullable": false, "enumValues": ["CUSTOMER", "SELLER", "ADMIN"] },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["ACTIVE", "PENDING", "SUSPENDED"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
         "name": "Address",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "street",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "city",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "state",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "zipCode",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "country",
-            "type": "String",
-            "nullable": false
-          },
-          {
-            "name": "isDefault",
-            "type": "Boolean",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "type", "type": "Enum", "nullable": false, "enumValues": ["BILLING", "SHIPPING"] },
+          { "name": "street", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 200 } },
+          { "name": "city", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "state", "type": "String", "nullable": false, "validation": { "maxSize": 100 } },
+          { "name": "zipCode", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 20 } },
+          { "name": "country", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "isDefault", "type": "Boolean", "nullable": false }
+        ]
+      },
+      {
+        "name": "Category",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "slug", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "parentId", "type": "Long", "nullable": true }
+        ]
+      },
+      {
+        "name": "Product",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "minSize": 2, "maxSize": 160 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 2000 } },
+          { "name": "price", "type": "BigDecimal", "nullable": false },
+          { "name": "sku", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "stock", "type": "Integer", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["DRAFT", "ACTIVE", "OUT_OF_STOCK", "ARCHIVED"] },
+          { "name": "imageUrl", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "ProductVariant",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "sku", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 120 } },
+          { "name": "priceModifier", "type": "BigDecimal", "nullable": false },
+          { "name": "stock", "type": "Integer", "nullable": false }
+        ]
+      },
+      {
+        "name": "Order",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "orderNumber", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"] },
+          { "name": "totalAmount", "type": "BigDecimal", "nullable": false },
+          { "name": "placedAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "updatedAt", "type": "LocalDateTime", "nullable": true }
+        ]
+      },
+      {
+        "name": "OrderItem",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "quantity", "type": "Integer", "nullable": false },
+          { "name": "unitPrice", "type": "BigDecimal", "nullable": false },
+          { "name": "subtotal", "type": "BigDecimal", "nullable": false }
+        ]
+      },
+      {
+        "name": "Payment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "method", "type": "Enum", "nullable": false, "enumValues": ["CREDIT_CARD", "PAYPAL", "STRIPE", "BANK_TRANSFER"] },
+          { "name": "amount", "type": "BigDecimal", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"] },
+          { "name": "transactionId", "type": "String", "nullable": true, "validation": { "maxSize": 120 } },
+          { "name": "paidAt", "type": "LocalDateTime", "nullable": true }
+        ]
+      },
+      {
+        "name": "Shipment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "carrier", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "trackingNumber", "type": "String", "nullable": true, "validation": { "maxSize": 120 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["PREPARING", "SHIPPED", "IN_TRANSIT", "DELIVERED", "RETURNED"] },
+          { "name": "shippedAt", "type": "LocalDateTime", "nullable": true },
+          { "name": "deliveredAt", "type": "LocalDateTime", "nullable": true }
         ]
       },
       {
         "name": "Review",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "rating",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "comment",
-            "type": "String",
-            "nullable": true
-          },
-          {
-            "name": "createdAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "rating", "type": "Integer", "nullable": false },
+          { "name": "title", "type": "String", "nullable": true, "validation": { "maxSize": 120 } },
+          { "name": "comment", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
         ]
       },
       {
-        "id": "cartItem",
         "name": "CartItem",
         "attributes": [
-          {
-            "name": "id",
-            "type": "Long",
-            "nullable": false,
-            "primaryKey": true,
-            "unique": true
-          },
-          {
-            "name": "quantity",
-            "type": "Integer",
-            "nullable": false
-          },
-          {
-            "name": "addedAt",
-            "type": "LocalDateTime",
-            "nullable": false
-          }
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "quantity", "type": "Integer", "nullable": false },
+          { "name": "addedAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Coupon",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "code", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "discountType", "type": "Enum", "nullable": false, "enumValues": ["PERCENTAGE", "FIXED_AMOUNT"] },
+          { "name": "discountValue", "type": "BigDecimal", "nullable": false },
+          { "name": "active", "type": "Boolean", "nullable": false },
+          { "name": "expiresAt", "type": "LocalDateTime", "nullable": true }
         ]
       }
     ],
     "relationships": [
       {
-        "from": "User",
-        "to": "Order",
-        "type": "ONE_TO_MANY",
-        "fromField": "orders",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Order", "type": "ONE_TO_MANY",
+        "fromField": "orders", "toField": "customer",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Order",
-        "to": "OrderItem",
-        "type": "ONE_TO_MANY",
-        "fromField": "items",
-        "toField": "order",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "User", "to": "Address", "type": "ONE_TO_MANY",
+        "fromField": "addresses", "toField": "user",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "OrderItem",
-        "to": "Product",
-        "type": "MANY_TO_ONE",
-        "fromField": "product",
-        "toField": "orderItems",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "Review", "type": "ONE_TO_MANY",
+        "fromField": "reviews", "toField": "author",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Product",
-        "to": "Category",
-        "type": "MANY_TO_ONE",
-        "fromField": "category",
-        "toField": "products",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "User", "to": "CartItem", "type": "ONE_TO_MANY",
+        "fromField": "cartItems", "toField": "user",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "Order",
-        "to": "Payment",
-        "type": "ONE_TO_ONE",
-        "fromField": "payment",
-        "toField": "order",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Product", "to": "Category", "type": "MANY_TO_ONE",
+        "fromField": "category", "toField": "products",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Address",
-        "type": "ONE_TO_MANY",
-        "fromField": "addresses",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "Product", "to": "ProductVariant", "type": "ONE_TO_MANY",
+        "fromField": "variants", "toField": "product",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "Review",
-        "type": "ONE_TO_MANY",
-        "fromField": "reviews",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Product", "to": "Review", "type": "ONE_TO_MANY",
+        "fromField": "reviews", "toField": "product",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "Review",
-        "to": "Product",
-        "type": "MANY_TO_ONE",
-        "fromField": "product",
-        "toField": "reviews",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Order", "to": "OrderItem", "type": "ONE_TO_MANY",
+        "fromField": "items", "toField": "order",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
       },
       {
-        "from": "User",
-        "to": "CartItem",
-        "type": "ONE_TO_MANY",
-        "fromField": "cartItems",
-        "toField": "user",
-        "fromNullable": false,
-        "toNullable": false,
-        "cascade": ["PERSIST", "MERGE", "REMOVE"],
-        "joinTable": null
+        "from": "OrderItem", "to": "Product", "type": "MANY_TO_ONE",
+        "fromField": "product", "toField": "orderItems",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       },
       {
-        "from": "CartItem",
-        "to": "Product",
-        "type": "MANY_TO_ONE",
-        "fromField": "product",
-        "toField": "cartItems",
-        "fromNullable": false,
-        "toNullable": true,
-        "cascade": ["PERSIST", "MERGE"],
-        "joinTable": null
+        "from": "Order", "to": "Payment", "type": "ONE_TO_ONE",
+        "fromField": "payment", "toField": "order",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Order", "to": "Shipment", "type": "ONE_TO_ONE",
+        "fromField": "shipment", "toField": "order",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Order", "to": "Coupon", "type": "MANY_TO_ONE",
+        "fromField": "coupon", "toField": "orders",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "CartItem", "to": "Product", "type": "MANY_TO_ONE",
+        "fromField": "product", "toField": "cartItems",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
       }
     ]
   }

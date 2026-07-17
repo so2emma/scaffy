@@ -1,0 +1,174 @@
+{
+  "id": "healthcare",
+  "name": "Clinic Management",
+  "description": "Healthcare clinic system with patients, doctors, appointments, prescriptions, diagnoses, and invoices.",
+  "category": "Healthcare",
+  "icon": "Stethoscope",
+  "entityCount": 10,
+  "diagram": {
+    "projectName": "my-clinic",
+    "basePackage": "com.example.clinic",
+    "targetFramework": "SPRING_BOOT",
+    "entities": [
+      {
+        "name": "Patient",
+        "softDelete": true,
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "medicalRecordNumber", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "firstName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "lastName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "email", "type": "String", "nullable": true, "validation": { "email": true, "maxSize": 150 } },
+          { "name": "phone", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 30 } },
+          { "name": "dateOfBirth", "type": "LocalDate", "nullable": false },
+          { "name": "gender", "type": "Enum", "nullable": false, "enumValues": ["MALE", "FEMALE", "OTHER", "UNDISCLOSED"] },
+          { "name": "bloodType", "type": "Enum", "nullable": true, "enumValues": ["A_POS", "A_NEG", "B_POS", "B_NEG", "AB_POS", "AB_NEG", "O_POS", "O_NEG"] },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Doctor",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "firstName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "lastName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 60 } },
+          { "name": "email", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "email": true, "maxSize": 150 } },
+          { "name": "licenseNumber", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["ACTIVE", "ON_LEAVE", "INACTIVE"] }
+        ]
+      },
+      {
+        "name": "Department",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "location", "type": "String", "nullable": true, "validation": { "maxSize": 120 } }
+        ]
+      },
+      {
+        "name": "Specialty",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "name", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 100 } },
+          { "name": "description", "type": "String", "nullable": true, "validation": { "maxSize": 500 } }
+        ]
+      },
+      {
+        "name": "Appointment",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "scheduledAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "durationMinutes", "type": "Integer", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["SCHEDULED", "CONFIRMED", "COMPLETED", "CANCELLED", "NO_SHOW"] },
+          { "name": "reason", "type": "String", "nullable": true, "validation": { "maxSize": 500 } },
+          { "name": "createdAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "MedicalRecord",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "notes", "type": "String", "nullable": true, "validation": { "maxSize": 4000 } },
+          { "name": "allergies", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } },
+          { "name": "updatedAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Diagnosis",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "code", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 20 } },
+          { "name": "description", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 500 } },
+          { "name": "severity", "type": "Enum", "nullable": false, "enumValues": ["MILD", "MODERATE", "SEVERE", "CRITICAL"] },
+          { "name": "diagnosedAt", "type": "LocalDateTime", "nullable": false }
+        ]
+      },
+      {
+        "name": "Prescription",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["ACTIVE", "COMPLETED", "CANCELLED"] },
+          { "name": "issuedAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "notes", "type": "String", "nullable": true, "validation": { "maxSize": 1000 } }
+        ]
+      },
+      {
+        "name": "PrescriptionItem",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "medicationName", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 150 } },
+          { "name": "dosage", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "frequency", "type": "String", "nullable": false, "validation": { "required": true, "maxSize": 80 } },
+          { "name": "durationDays", "type": "Integer", "nullable": true }
+        ]
+      },
+      {
+        "name": "Invoice",
+        "attributes": [
+          { "name": "id", "type": "Long", "nullable": false, "primaryKey": true, "unique": true },
+          { "name": "invoiceNumber", "type": "String", "nullable": false, "unique": true, "validation": { "required": true, "maxSize": 40 } },
+          { "name": "amount", "type": "BigDecimal", "nullable": false },
+          { "name": "status", "type": "Enum", "nullable": false, "enumValues": ["UNPAID", "PAID", "PARTIALLY_PAID", "WAIVED"] },
+          { "name": "issuedAt", "type": "LocalDateTime", "nullable": false },
+          { "name": "paidAt", "type": "LocalDateTime", "nullable": true }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "Department", "to": "Doctor", "type": "ONE_TO_MANY",
+        "fromField": "doctors", "toField": "department",
+        "fromNullable": false, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Doctor", "to": "Specialty", "type": "MANY_TO_MANY",
+        "fromField": "specialties", "toField": "doctors",
+        "fromNullable": true, "toNullable": true,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": "doctor_specialties"
+      },
+      {
+        "from": "Patient", "to": "MedicalRecord", "type": "ONE_TO_ONE",
+        "fromField": "medicalRecord", "toField": "patient",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Patient", "to": "Appointment", "type": "ONE_TO_MANY",
+        "fromField": "appointments", "toField": "patient",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Doctor", "to": "Appointment", "type": "ONE_TO_MANY",
+        "fromField": "appointments", "toField": "doctor",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      },
+      {
+        "from": "Appointment", "to": "Diagnosis", "type": "ONE_TO_MANY",
+        "fromField": "diagnoses", "toField": "appointment",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Appointment", "to": "Prescription", "type": "ONE_TO_MANY",
+        "fromField": "prescriptions", "toField": "appointment",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Prescription", "to": "PrescriptionItem", "type": "ONE_TO_MANY",
+        "fromField": "items", "toField": "prescription",
+        "fromNullable": false, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE", "REMOVE"], "joinTable": null
+      },
+      {
+        "from": "Appointment", "to": "Invoice", "type": "ONE_TO_ONE",
+        "fromField": "invoice", "toField": "appointment",
+        "fromNullable": true, "toNullable": false,
+        "cascade": ["PERSIST", "MERGE"], "joinTable": null
+      }
+    ]
+  }
+}

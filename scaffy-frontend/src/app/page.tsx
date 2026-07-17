@@ -39,7 +39,8 @@ function ScaffyAppContent() {
 
   const { showToast } = useToast();
 
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const validationErrors = useDiagramStore((state) => state.validationErrors);
+  const setValidationErrors = useDiagramStore((state) => state.setValidationErrors);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
@@ -189,7 +190,19 @@ function ScaffyAppContent() {
 
         <RelationshipPanel />
 
-        <ValidationErrors errors={validationErrors} />
+        <ValidationErrors
+          errors={validationErrors}
+          onErrorClick={(entityName) => {
+            const store = useDiagramStore.getState();
+            store.onNodesChange(
+              store.nodes.map(n => ({
+                type: 'select',
+                id: n.id,
+                selected: n.data.name === entityName
+              }))
+            );
+          }}
+        />
       </div>
     </div>
   );

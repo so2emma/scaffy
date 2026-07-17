@@ -26,11 +26,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
   const addEntity = useDiagramStore((state) => state.addEntity);
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
+  const validationErrors = useDiagramStore((state) => state.validationErrors);
 
   const { showToast } = useToast();
 
   const [isFrameworkModalOpen, setIsFrameworkModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved'>('saved');
+  const [shaking, setShaking] = useState(false);
+
+  const errorCount = validationErrors.length;
+  const healthPct = Math.max(0, 100 - errorCount * 15); // 0 errors = 100%, 7+ errors = 0%
+  const healthColor = errorCount === 0 ? 'var(--c-primary)' : errorCount <= 2 ? '#f59e0b' : '#ef4444';
+  const healthLabel = errorCount === 0 ? '✓ No issues' : errorCount === 1 ? '⚠ 1 issue' : `✗ ${errorCount} issues`;
+
+  const handleGenerateClick = () => {
+    if (validationErrors.length > 0) {
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+      return;
+    }
+    onGenerate();
+  };
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -240,6 +256,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
       {/* Entities list */}
       <section className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="section-label">Entities ({nodes.length})</label>
+        
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: 4 }}>
+            <span style={{ color: healthColor, fontWeight: 600 }}>{healthLabel}</span>
+          </div>
+          <div style={{ height: 4, borderRadius: 9999, background: 'var(--c-surface-3)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${healthPct}%`,
+              borderRadius: 9999,
+              background: healthColor,
+              transition: 'width 0.4s ease, background 0.4s ease'
+            }} />
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2">
           {nodes.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted">
@@ -274,9 +306,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
         </div>
 
         <button
-          className="btn btn-primary w-full py-3"
-          onClick={onGenerate}
+          className={`btn btn-primary w-full py-3 ${shaking ? 'animate-shake' : ''}`}
+          onClick={handleGenerateClick}
           disabled={isGenerating || nodes.length === 0}
+          title={
+            validationErrors.length > 0
+              ? `Fix ${validationErrors.length} validation error${validationErrors.length > 1 ? 's' : ''} before generating`
+              : undefined
+          }
         >
           <Download size={18} />
           {isGenerating ? 'Generating...' : 'Generate Backend Scaffold'}

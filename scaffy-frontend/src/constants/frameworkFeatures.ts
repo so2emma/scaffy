@@ -39,6 +39,12 @@ export const FRAMEWORK_FEATURES: Record<string, FeatureMeta[]> = {
     { id: 'phpunit', label: 'PHPUnit Feature Tests', enabledByDefault: false },
     { id: 'dockerFile', label: 'Dockerfile + Compose', enabledByDefault: false },
   ],
+  GIN: [
+    { id: 'swagger', label: 'Swagger Docs (swaggo)', enabledByDefault: false },
+    { id: 'goTests', label: 'Go Test Stubs', enabledByDefault: false },
+    { id: 'dockerFile', label: 'Dockerfile + Compose', enabledByDefault: false },
+    { id: 'envConfig', label: '.env Config (godotenv)', enabledByDefault: true },
+  ],
 };
 
 export function getDefaultFeaturesForFramework(framework: string): Record<string, boolean> {

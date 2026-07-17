@@ -120,6 +120,7 @@ const BADGE_STYLES: Record<string, string> = {
   fastapi: 'text-orange-400 bg-orange-400/10',
   nestjs: 'text-fuchsia-400 bg-fuchsia-400/10',
   django_rest: 'text-amber-500 bg-amber-500/10',
+  laravel: 'text-rose-400 bg-rose-400/10',
 };
 
 export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName }) => {
@@ -201,6 +202,16 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
         if (tab === 'Admin') return `${projNameSnake}/api/admin.py`;
         if (tab === 'Settings') return `${projNameSnake}/${projNameSnake}/settings.py`;
         if (tab === 'Tests') return `${projNameSnake}/api/tests.py`;
+      } else if (targetFramework === 'LARAVEL') {
+        const entitySnake = entityName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+        if (tab === 'Model') return `${projNameSnake}/app/Models/${entityName}.php`;
+        if (tab === 'Controller') return `${projNameSnake}/app/Http/Controllers/Api/${entityName}Controller.php`;
+        if (tab === 'Store Request') return `${projNameSnake}/app/Http/Requests/Store${entityName}Request.php`;
+        if (tab === 'Update Request') return `${projNameSnake}/app/Http/Requests/Update${entityName}Request.php`;
+        if (tab === 'API Resource') return `${projNameSnake}/app/Http/Resources/${entityName}Resource.php`;
+        if (tab === 'Migration') return `${projNameSnake}/database/migrations/2024_01_01_000001_create_${entitySnake}s_table.php`;
+        if (tab === 'Routes') return `${projNameSnake}/routes/api.php`;
+        if (tab === 'Feature Test') return `${projNameSnake}/tests/Feature/${entityName}Test.php`;
       }
 
       return `${projNameSnake}/${tab}`;
@@ -310,6 +321,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     if (targetFramework === 'NESTJS') return 'typescript';
     if (targetFramework === 'FASTAPI') return 'python';
     if (targetFramework === 'DJANGO_REST') return 'python';
+    if (targetFramework === 'LARAVEL') return 'php';
     return 'java';
   };
 
@@ -325,7 +337,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       ? 'NestJS'
       : targetFramework === 'DJANGO_REST'
       ? 'Django REST'
-      : 'FastAPI';
+      : targetFramework === 'FASTAPI'
+      ? 'FastAPI'
+      : 'Laravel';
 
   return (
     <div

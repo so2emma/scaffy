@@ -32,6 +32,13 @@ export const FRAMEWORK_FEATURES: Record<string, FeatureMeta[]> = {
     { id: 'pytestStubs', label: 'APITestCase Stubs', enabledByDefault: false },
     { id: 'corsHeaders', label: 'CORS Headers', enabledByDefault: true },
   ],
+  LARAVEL: [
+    { id: 'sanctumAuth', label: 'Laravel Sanctum (API Auth)', enabledByDefault: false },
+    { id: 'formRequests', label: 'Form Request Validation', enabledByDefault: true },
+    { id: 'apiResources', label: 'API Resource Transformers', enabledByDefault: true },
+    { id: 'phpunit', label: 'PHPUnit Feature Tests', enabledByDefault: false },
+    { id: 'dockerFile', label: 'Dockerfile + Compose', enabledByDefault: false },
+  ],
 };
 
 export function getDefaultFeaturesForFramework(framework: string): Record<string, boolean> {

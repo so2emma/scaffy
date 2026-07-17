@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { X, Search, LayoutTemplate, ShoppingCart, Building2, Users, FileText, Package, Loader2 } from 'lucide-react';
+import {
+  X, Search, LayoutTemplate, ShoppingCart, Building2, Users, FileText, Package, Loader2,
+  Stethoscope, KanbanSquare, Hotel, GraduationCap,
+} from 'lucide-react';
 import { useTemplates } from '../hooks/useTemplates';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { useToast } from '../hooks/useToast';
@@ -14,6 +17,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   Platform: '#38bdf8',
   Social: '#e879f9',
   Content: '#fb923c',
+  Healthcare: '#f87171',
+  Productivity: '#a78bfa',
+  Hospitality: '#22d3ee',
+  Education: '#fbbf24',
 };
 
 const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string }>> = {
@@ -22,6 +29,10 @@ const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string }>> 
   Users,
   FileText,
   Package,
+  Stethoscope,
+  KanbanSquare,
+  Hotel,
+  GraduationCap,
 };
 
 export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOpen, onClose }) => {

@@ -122,6 +122,7 @@ const BADGE_STYLES: Record<string, string> = {
   django_rest: 'text-amber-500 bg-amber-500/10',
   laravel: 'text-rose-400 bg-rose-400/10',
   gin: 'text-emerald-400 bg-emerald-400/10',
+  rails: 'text-red-400 bg-red-400/10',
 };
 
 export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName }) => {
@@ -222,6 +223,15 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
         if (tab === 'Database') return `${projNameSnake}/internal/database/database.go`;
         if (tab === 'Main') return `${projNameSnake}/cmd/server/main.go`;
         if (tab === 'go.mod') return `${projNameSnake}/go.mod`;
+      } else if (targetFramework === 'RAILS') {
+        const entitySnake = entityName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+        const entityPlural = `${entitySnake}s`;
+        if (tab === 'Model') return `${projNameSnake}/app/models/${entitySnake}.rb`;
+        if (tab === 'Controller') return `${projNameSnake}/app/controllers/api/v1/${entityPlural}_controller.rb`;
+        if (tab === 'Serializer') return `${projNameSnake}/app/serializers/${entitySnake}_serializer.rb`;
+        if (tab === 'Migration') return `${projNameSnake}/db/migrate/20240101000001_create_${entityPlural}.rb`;
+        if (tab === 'Routes') return `${projNameSnake}/config/routes.rb`;
+        if (tab === 'RSpec') return `${projNameSnake}/spec/models/${entitySnake}_spec.rb`;
       }
 
       return `${projNameSnake}/${tab}`;
@@ -333,6 +343,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     if (targetFramework === 'DJANGO_REST') return 'python';
     if (targetFramework === 'LARAVEL') return 'php';
     if (targetFramework === 'GIN') return 'go';
+    if (targetFramework === 'RAILS') return 'ruby';
     return 'java';
   };
 
@@ -352,7 +363,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       ? 'FastAPI'
       : targetFramework === 'LARAVEL'
       ? 'Laravel'
-      : 'Gin (Go)';
+      : targetFramework === 'GIN'
+      ? 'Gin (Go)'
+      : 'Ruby on Rails';
 
   return (
     <div

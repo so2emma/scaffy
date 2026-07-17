@@ -45,6 +45,12 @@ export const FRAMEWORK_FEATURES: Record<string, FeatureMeta[]> = {
     { id: 'dockerFile', label: 'Dockerfile + Compose', enabledByDefault: false },
     { id: 'envConfig', label: '.env Config (godotenv)', enabledByDefault: true },
   ],
+  RAILS: [
+    { id: 'rspecTests', label: 'RSpec Tests', enabledByDefault: false },
+    { id: 'serializers', label: 'Active Model Serializers', enabledByDefault: true },
+    { id: 'dockerFile', label: 'Dockerfile + Compose', enabledByDefault: false },
+    { id: 'jbuilder', label: 'JBuilder JSON Views', enabledByDefault: false },
+  ],
 };
 
 export function getDefaultFeaturesForFramework(framework: string): Record<string, boolean> {

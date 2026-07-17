@@ -1,10 +1,11 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { useDiagramStore, Attribute } from '../store/useDiagramStore';
-import { Trash2, Plus, Settings } from 'lucide-react';
+import { Trash2, Plus, Settings, AlertTriangle } from 'lucide-react';
 
 export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
   const node = useDiagramStore((state) => state.nodes.find((n) => n.id === id));
+  const validationErrors = useDiagramStore((state) => state.validationErrors);
   const updateEntityName = useDiagramStore((state) => state.updateEntityName);
   const updateEntityTableName = useDiagramStore((state) => state.updateEntityTableName);
   const updateEntitySoftDelete = useDiagramStore((state) => state.updateEntitySoftDelete);
@@ -20,6 +21,8 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
   if (!node) return null;
 
   const { name, tableName, attributes } = node.data;
+  const nodeErrors = validationErrors.filter((e) => e.target === name);
+  const hasError = nodeErrors.length > 0;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     updateEntityName(id, e.target.value);
@@ -49,15 +52,48 @@ export const EntityNode: React.FC<NodeProps> = ({ id, selected }) => {
 
   return (
     <div
-      className={`w-80 overflow-hidden rounded-xl border bg-surface shadow-lg transition-all ${
-        selected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+      className={`relative w-80 rounded-xl border bg-surface shadow-lg transition-all ${
+        hasError ? '' : selected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
       }`}
+      style={
+        hasError
+          ? {
+              boxShadow: '0 0 0 2px #ef4444, 0 0 16px 4px rgba(239,68,68,0.25)',
+              borderColor: '#ef4444',
+            }
+          : undefined
+      }
     >
       <Handle type="target" position={Position.Top} id="t-top" />
       <Handle type="target" position={Position.Left} id="t-left" />
 
+      {hasError && (
+        <div
+          className="animate-errorPulse"
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            right: '-8px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '9999px',
+            backgroundColor: '#ef4444',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            zIndex: 10,
+            cursor: 'pointer'
+          }}
+          title={nodeErrors.map((e) => e.message).join('\n')}
+        >
+          <AlertTriangle size={12} style={{ color: '#ffffff' }} />
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex flex-col gap-1.5 border-b border-border bg-surface-2 px-4 py-3">
+      <div className="flex flex-col gap-1.5 border-b border-border bg-surface-2 px-4 py-3 rounded-t-[13px]">
         <div className="flex items-center justify-between">
           <input
             type="text"

@@ -266,10 +266,11 @@ public class LaravelCodeGenerator implements CodeGenerator {
                 %s
                 """.formatted(
                 diagram.getProjectName(),
+                diagram.getEnabledFeatures() != null ?
                 diagram.getEnabledFeatures().entrySet().stream()
                         .filter(Map.Entry::getValue)
                         .map(e -> "- " + e.getKey())
-                        .collect(Collectors.joining("\n"))
+                        .collect(Collectors.joining("\n")) : "None"
         );
     }
 

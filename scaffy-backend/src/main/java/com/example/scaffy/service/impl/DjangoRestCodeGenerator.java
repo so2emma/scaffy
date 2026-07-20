@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -60,7 +61,7 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
         return List.of(
                 new FeatureDescriptor("openApi", "drf-spectacular", "OpenAPI 3 schema with Swagger UI and ReDoc", true),
                 new FeatureDescriptor("djangoTests", "API Test Stubs", "Generates APITestCase stubs for CRUD operations", false),
-                new FeatureDescriptor("dockerFile", "Dockerfile", "Generates a production-ready Dockerfile and docker-compose.yml", false)
+                new FeatureDescriptor("dockerFile", "Dockerfile + Compose + CI", "Generates Dockerfile, docker-compose.yml, and GitHub Actions CI workflow", false)
         );
     }
 
@@ -100,10 +101,6 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
 
             zos.putNextEntry(new ZipEntry(projectFolder + "requirements.txt"));
             renderTemplate("requirements.txt.ftl", rootModel, zos);
-            zos.closeEntry();
-
-            zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
-            renderTemplate("env.example.ftl", rootModel, zos);
             zos.closeEntry();
 
             zos.putNextEntry(new ZipEntry(projectFolder + "README.md"));
@@ -161,6 +158,28 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
                 renderTemplate("tests.py.ftl", rootModel, zos);
                 zos.closeEntry();
             }
+
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                zos.putNextEntry(new ZipEntry(projectFolder + "Dockerfile"));
+                zos.write(DockerFileGenerator.generateDockerfile(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + "docker-compose.yml"));
+                zos.write(DockerFileGenerator.generateDockerCompose(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".github/workflows/ci.yml"));
+                zos.write(DockerFileGenerator.generateGithubActionsWorkflow(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
+                zos.write(DockerFileGenerator.generateDotEnvExample(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
         }
         return baos.toByteArray();
     }
@@ -208,6 +227,17 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
 
         if (generateTestStubs) {
             preview.put("Tests", renderTemplateToString("tests.py.ftl", rootModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
         }
 
         return preview;

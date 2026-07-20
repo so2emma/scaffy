@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -123,6 +124,17 @@ public class LaravelCodeGenerator implements CodeGenerator {
             preview.put("Feature Test", allFiles.getOrDefault(testKey, ""));
         }
 
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
         return preview;
     }
 
@@ -136,8 +148,12 @@ public class LaravelCodeGenerator implements CodeGenerator {
         files.put("routes/api.php", generateRoutes(diagram));
 
         if (diagram.isFeatureEnabled("dockerFile")) {
-            files.put("Dockerfile", generateDockerfile());
-            files.put("docker-compose.yml", generateDockerCompose(diagram));
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            files.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            files.put("docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            files.put(".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            files.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
         }
 
         int migrationIndex = 1;

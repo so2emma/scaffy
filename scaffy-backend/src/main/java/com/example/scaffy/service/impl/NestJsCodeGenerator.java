@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -121,11 +122,6 @@ public class NestJsCodeGenerator implements CodeGenerator {
             renderTemplate("tsconfig.json.ftl", rootModel, zos);
             zos.closeEntry();
 
-            // 3. .env.example
-            zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
-            renderTemplate("env.example.ftl", rootModel, zos);
-            zos.closeEntry();
-
             // 4. README.md
             zos.putNextEntry(new ZipEntry(projectFolder + "README.md"));
             renderTemplate("README.md.ftl", rootModel, zos);
@@ -184,13 +180,25 @@ public class NestJsCodeGenerator implements CodeGenerator {
             }
 
             // 8. Docker files
-            if (dockerFile) {
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
                 zos.putNextEntry(new ZipEntry(projectFolder + "Dockerfile"));
-                renderTemplate("Dockerfile.ftl", rootModel, zos);
+                zos.write(DockerFileGenerator.generateDockerfile(framework, projName).getBytes(StandardCharsets.UTF_8));
                 zos.closeEntry();
 
                 zos.putNextEntry(new ZipEntry(projectFolder + "docker-compose.yml"));
-                renderTemplate("docker-compose.yml.ftl", rootModel, zos);
+                zos.write(DockerFileGenerator.generateDockerCompose(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".github/workflows/ci.yml"));
+                zos.write(DockerFileGenerator.generateGithubActionsWorkflow(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
+                zos.write(DockerFileGenerator.generateDotEnvExample(framework, projName).getBytes(StandardCharsets.UTF_8));
                 zos.closeEntry();
             }
         }
@@ -264,6 +272,17 @@ public class NestJsCodeGenerator implements CodeGenerator {
 
         if (diagram.isGenerateTestStubs() || diagram.isFeatureEnabled("jestTests")) {
             preview.put("Unit Test", renderTemplateToString("entity.service.spec.ts.ftl", targetModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
         }
 
         return preview;

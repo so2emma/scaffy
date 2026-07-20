@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -61,7 +62,8 @@ public class FastApiCodeGenerator implements CodeGenerator {
         return List.of(
                 new FeatureDescriptor("openApi", "OpenAPI / Swagger Docs", "FastAPI built-in OpenAPI documentation", true),
                 new FeatureDescriptor("alembicMigrations", "Alembic Migrations", "Generates Alembic database migration scripts", false),
-                new FeatureDescriptor("pytestStubs", "Pytest Stubs", "Generates pytest-based test stubs for each router", false)
+                new FeatureDescriptor("pytestStubs", "Pytest Stubs", "Generates pytest-based test stubs for each router", false),
+                new FeatureDescriptor("dockerFile", "Dockerfile + Compose + CI", "Generates Dockerfile, docker-compose.yml, and GitHub Actions CI workflow", false)
         );
     }
 
@@ -202,6 +204,27 @@ public class FastApiCodeGenerator implements CodeGenerator {
                 renderTemplate("router.py.ftl", entityModel, zos);
                 zos.closeEntry();
             }
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                zos.putNextEntry(new ZipEntry(projectFolder + "Dockerfile"));
+                zos.write(DockerFileGenerator.generateDockerfile(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + "docker-compose.yml"));
+                zos.write(DockerFileGenerator.generateDockerCompose(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".github/workflows/ci.yml"));
+                zos.write(DockerFileGenerator.generateGithubActionsWorkflow(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
+                zos.write(DockerFileGenerator.generateDotEnvExample(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
         }
         return baos.toByteArray();
     }
@@ -276,6 +299,17 @@ public class FastApiCodeGenerator implements CodeGenerator {
 
         preview.put("Main App", renderTemplateToString("main.py.ftl", rootModel));
         preview.put("Database Config", renderTemplateToString("database.py.ftl", rootModel));
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
 
         return preview;
     }

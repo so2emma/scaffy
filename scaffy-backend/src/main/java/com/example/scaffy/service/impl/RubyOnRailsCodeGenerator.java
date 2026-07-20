@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -102,6 +103,17 @@ public class RubyOnRailsCodeGenerator implements CodeGenerator {
             preview.put("RSpec", allFiles.getOrDefault("spec/models/" + entitySnake + "_spec.rb", ""));
         }
 
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
         return preview;
     }
 
@@ -117,8 +129,12 @@ public class RubyOnRailsCodeGenerator implements CodeGenerator {
         files.put("app/controllers/application_controller.rb", generateApplicationController());
 
         if (diagram.isFeatureEnabled("dockerFile")) {
-            files.put("Dockerfile", generateDockerfile());
-            files.put("docker-compose.yml", generateDockerCompose(diagram));
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            files.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            files.put("docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            files.put(".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            files.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
         }
 
         if (diagram.isFeatureEnabled("rspecTests")) {

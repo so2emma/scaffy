@@ -2,6 +2,7 @@ package com.example.scaffy.service.impl;
 
 import com.example.scaffy.model.*;
 import com.example.scaffy.service.CodeGenerator;
+import com.example.scaffy.service.DockerFileGenerator;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateExceptionHandler;
@@ -61,7 +62,8 @@ public class SpringBootCodeGenerator implements CodeGenerator {
         return List.of(
                 new FeatureDescriptor("openApi", "OpenAPI / Swagger Docs", "Generates OpenAPI 3.0 documentation with Swagger UI", true),
                 new FeatureDescriptor("mockitoTests", "Mockito Unit Tests", "Generates service-layer unit tests using Mockito", false),
-                new FeatureDescriptor("flywayMigration", "Flyway Migration", "Generates versioned SQL migration scripts for Flyway", false)
+                new FeatureDescriptor("flywayMigration", "Flyway Migration", "Generates versioned SQL migration scripts for Flyway", false),
+                new FeatureDescriptor("dockerFile", "Dockerfile + Compose + CI", "Generates Dockerfile, docker-compose.yml, and GitHub Actions CI workflow", false)
         );
     }
 
@@ -216,6 +218,29 @@ public class SpringBootCodeGenerator implements CodeGenerator {
                     zos.closeEntry();
                 }
             }
+
+            // 7. Generate Docker / CI files if requested
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                zos.putNextEntry(new ZipEntry(projectFolder + "Dockerfile"));
+                zos.write(DockerFileGenerator.generateDockerfile(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + "docker-compose.yml"));
+                zos.write(DockerFileGenerator.generateDockerCompose(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".github/workflows/ci.yml"));
+                zos.write(DockerFileGenerator.generateGithubActionsWorkflow(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+
+                zos.putNextEntry(new ZipEntry(projectFolder + ".env.example"));
+                zos.write(DockerFileGenerator.generateDotEnvExample(framework, projName).getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
         }
         return baos.toByteArray();
     }
@@ -305,6 +330,17 @@ public class SpringBootCodeGenerator implements CodeGenerator {
         // Service Mockito Unit Test Stub (Conditional)
         if (diagram.isGenerateTestStubs()) {
             preview.put("Unit Test", renderTemplateToString("ServiceImplTest.java.ftl", entityModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
         }
 
         return preview;

@@ -72,6 +72,28 @@ public class RubyOnRailsCodeGenerator implements CodeGenerator {
 
     @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
+        if ("__PROJECT__".equalsIgnoreCase(entityName)) {
+            Map<String, String> preview = new LinkedHashMap<>();
+            Map<String, String> allFiles = generateAllFiles(diagram);
+
+            preview.put("Gemfile", allFiles.getOrDefault("Gemfile", ""));
+            preview.put("config/routes.rb", allFiles.getOrDefault("config/routes.rb", ""));
+            preview.put("config/database.yml", allFiles.getOrDefault("config/database.yml", ""));
+
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+                preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+                preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+                preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+            }
+
+            return preview;
+        }
+
         Map<String, String> preview = new LinkedHashMap<>();
         EntityDto target = diagram.getEntities().stream()
                 .filter(e -> e.getName().equalsIgnoreCase(entityName))

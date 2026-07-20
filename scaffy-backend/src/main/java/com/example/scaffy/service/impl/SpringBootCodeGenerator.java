@@ -247,6 +247,64 @@ public class SpringBootCodeGenerator implements CodeGenerator {
 
     @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
+        if ("__PROJECT__".equalsIgnoreCase(entityName)) {
+            Map<String, String> preview = new LinkedHashMap<>();
+
+            Map<String, String> entityIdTypes = new HashMap<>();
+            Map<String, String> tableNames = new HashMap<>();
+            Map<String, String> pkColumnNames = new HashMap<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                String idType = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(AttributeDto::getType)
+                        .findFirst()
+                        .orElse("Long");
+                entityIdTypes.put(entity.getName(), idType);
+                tableNames.put(entity.getName(), entity.getTableName());
+                
+                String pkColumnName = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(attr -> toSnakeCase(attr.getName()))
+                        .findFirst()
+                        .orElse("id");
+                pkColumnNames.put(entity.getName(), pkColumnName);
+            }
+
+            List<Map<String, Object>> preparedEntities = new ArrayList<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes));
+            }
+
+            Map<String, Object> rootModel = new HashMap<>();
+            rootModel.put("basePackage", diagram.getBasePackage());
+            rootModel.put("projectName", diagram.getProjectName());
+            rootModel.put("entities", diagram.getEntities());
+            rootModel.put("relationships", diagram.getRelationships());
+            rootModel.put("entityIdTypes", entityIdTypes);
+            rootModel.put("tableNames", tableNames);
+            rootModel.put("pkColumnNames", pkColumnNames);
+            rootModel.put("preparedEntities", preparedEntities);
+            rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+            rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+            rootModel.put("flywayMigration", diagram.isFlywayMigration());
+
+            preview.put("application.properties", renderTemplateToString("application.properties.ftl", rootModel));
+            preview.put("pom.xml", renderTemplateToString("pom.xml.ftl", rootModel));
+
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+                preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+                preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+                preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+            }
+
+            return preview;
+        }
+
         Map<String, String> preview = new LinkedHashMap<>();
         
         EntityDto targetEntity = null;

@@ -226,6 +226,70 @@ public class ExpressCodeGenerator implements CodeGenerator {
 
     @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
+        if ("__PROJECT__".equalsIgnoreCase(entityName)) {
+            Map<String, String> preview = new LinkedHashMap<>();
+
+            Map<String, String> entityIdTypes = new HashMap<>();
+            Map<String, String> entityIdNames = new HashMap<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                String idType = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(AttributeDto::getType)
+                        .findFirst()
+                        .orElse("Long");
+                entityIdTypes.put(entity.getName(), idType);
+
+                String idName = entity.getAttributes().stream()
+                        .filter(AttributeDto::isPrimaryKey)
+                        .map(AttributeDto::getName)
+                        .findFirst()
+                        .orElse("id");
+                entityIdNames.put(entity.getName(), idName);
+            }
+
+            List<Map<String, Object>> preparedEntities = new ArrayList<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                preparedEntities.add(prepareExpressEntityModel(entity, diagram, entityIdTypes, entityIdNames));
+            }
+
+            List<Map<String, Object>> globalEnums = new ArrayList<>();
+            for (Map<String, Object> entityModel : preparedEntities) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> enums = (List<Map<String, Object>>) entityModel.get("enums");
+                if (enums != null) {
+                    globalEnums.addAll(enums);
+                }
+            }
+
+            Map<String, Object> rootModel = new HashMap<>();
+            rootModel.put("projectName", diagram.getProjectName());
+            rootModel.put("basePackage", diagram.getBasePackage());
+            rootModel.put("entities", diagram.getEntities());
+            rootModel.put("relationships", diagram.getRelationships());
+            rootModel.put("preparedEntities", preparedEntities);
+            rootModel.put("globalEnums", globalEnums);
+            rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+            rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+            rootModel.put("flywayMigration", diagram.isFlywayMigration());
+
+            preview.put("App Configuration", renderTemplateToString("app.ts.ftl", rootModel));
+            preview.put("package.json", renderTemplateToString("package.json.ftl", rootModel));
+            preview.put("Prisma Schema", renderTemplateToString("schema.prisma.ftl", rootModel));
+
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+                preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+                preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+                preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+            }
+
+            return preview;
+        }
+
         Map<String, String> preview = new LinkedHashMap<>();
 
         EntityDto targetEntity = null;

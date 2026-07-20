@@ -186,6 +186,46 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
 
     @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
+        if ("__PROJECT__".equalsIgnoreCase(entityName)) {
+            Map<String, String> preview = new LinkedHashMap<>();
+
+            String projectNameSnake = toSnakeCase(diagram.getProjectName());
+            String appName = "api";
+            boolean openApiSupport = diagram.isOpenApiSupport() || diagram.isFeatureEnabled("openApi");
+            boolean generateTestStubs = diagram.isGenerateTestStubs() || diagram.isFeatureEnabled("djangoTests");
+
+            List<Map<String, Object>> preparedEntities = new ArrayList<>();
+            for (EntityDto entity : diagram.getEntities()) {
+                preparedEntities.add(prepareEntityModel(entity, diagram));
+            }
+
+            Map<String, Object> rootModel = new HashMap<>();
+            rootModel.put("projectName", diagram.getProjectName());
+            rootModel.put("projectNameSnake", projectNameSnake);
+            rootModel.put("appName", appName);
+            rootModel.put("preparedEntities", preparedEntities);
+            rootModel.put("openApiSupport", openApiSupport);
+            rootModel.put("generateTestStubs", generateTestStubs);
+
+            preview.put("Settings", renderTemplateToString("settings.py.ftl", rootModel));
+            preview.put("urls.py", renderTemplateToString("urls.py.ftl", rootModel));
+            preview.put("manage.py", renderTemplateToString("manage.py.ftl", rootModel));
+            preview.put("requirements.txt", renderTemplateToString("requirements.txt.ftl", rootModel));
+
+            Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                    && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+            if (dockerEnabled) {
+                String framework = getFrameworkId();
+                String projName = diagram.getProjectName();
+                preview.put("Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+                preview.put("docker-compose", DockerFileGenerator.generateDockerCompose(framework, projName));
+                preview.put("GitHub CI", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+                preview.put(".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+            }
+
+            return preview;
+        }
+
         Map<String, String> preview = new LinkedHashMap<>();
 
         EntityDto targetEntity = null;

@@ -624,9 +624,10 @@ public class GinCodeGenerator implements CodeGenerator {
                 """.formatted(
                 moduleName, moduleName, entity.getName(), entity.getName(),
                 entity.getName(), entity.getName(), entity.getName(),
-                toLowerCamelCase(entity.getName()), swg, entity.getName(),
+                entity.getName(), swg, entity.getName(),
                 entity.getName(), parseIdBlock,
-                entity.getName(), entity.getName(), parseIdBlock,
+                entity.getName(), entity.getName(),
+                entity.getName(), parseIdBlock,
                 entity.getName(), parseIdBlock
         );
     }

@@ -118,4 +118,63 @@ public class MultiFrameworkCodeGeneratorTest {
             assertTrue(entryNames.contains(projFolder + ".env.example"), ".env.example missing in zip for " + generator.getFrameworkId());
         }
     }
+
+    @Test
+    public void testProjectWidePreviewForAllFrameworks() throws Exception {
+        DiagramDto diagram = createSampleDiagram();
+
+        for (CodeGenerator generator : generators) {
+            diagram.setTargetFramework(generator.getFrameworkId());
+            System.out.println("Testing project-level preview for: " + generator.getDisplayName());
+
+            Map<String, String> preview = generator.generatePreview(diagram, "__PROJECT__");
+            assertNotNull(preview, "Project preview should not be null for " + generator.getFrameworkId());
+            assertFalse(preview.isEmpty(), "Project preview should not be empty for " + generator.getFrameworkId());
+
+            switch (generator.getFrameworkId()) {
+                case "SPRING_BOOT":
+                    assertTrue(preview.containsKey("application.properties"));
+                    assertTrue(preview.containsKey("pom.xml"));
+                    break;
+                case "EXPRESS":
+                    assertTrue(preview.containsKey("App Configuration"));
+                    assertTrue(preview.containsKey("package.json"));
+                    assertTrue(preview.containsKey("Prisma Schema"));
+                    break;
+                case "FASTAPI":
+                    assertTrue(preview.containsKey("Main App"));
+                    assertTrue(preview.containsKey("Database Config"));
+                    assertTrue(preview.containsKey("requirements.txt"));
+                    break;
+                case "NESTJS":
+                    assertTrue(preview.containsKey("App Module"));
+                    assertTrue(preview.containsKey("main.ts"));
+                    assertTrue(preview.containsKey("package.json"));
+                    break;
+                case "DJANGO_REST":
+                    assertTrue(preview.containsKey("Settings"));
+                    assertTrue(preview.containsKey("urls.py"));
+                    assertTrue(preview.containsKey("manage.py"));
+                    assertTrue(preview.containsKey("requirements.txt"));
+                    break;
+                case "LARAVEL":
+                    assertTrue(preview.containsKey("composer.json"));
+                    assertTrue(preview.containsKey("routes/api.php"));
+                    assertTrue(preview.containsKey(".env.example"));
+                    break;
+                case "GIN":
+                    assertTrue(preview.containsKey("go.mod"));
+                    assertTrue(preview.containsKey("cmd/server/main.go"));
+                    assertTrue(preview.containsKey("internal/database/database.go"));
+                    break;
+                case "RAILS":
+                    assertTrue(preview.containsKey("Gemfile"));
+                    assertTrue(preview.containsKey("config/routes.rb"));
+                    assertTrue(preview.containsKey("config/database.yml"));
+                    break;
+                default:
+                    fail("Unexpected framework: " + generator.getFrameworkId());
+            }
+        }
+    }
 }

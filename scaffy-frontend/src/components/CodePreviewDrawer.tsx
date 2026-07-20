@@ -78,6 +78,22 @@ const CATEGORY_ORDER = [
   '⚡ Infrastructure',
 ];
 
+function sortTreeNodes(nodes: TreeNode[]): TreeNode[] {
+  nodes.sort((a, b) => {
+    if (a.isFolder && !b.isFolder) return -1;
+    if (!a.isFolder && b.isFolder) return 1;
+    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  for (const node of nodes) {
+    if (node.isFolder && node.children) {
+      sortTreeNodes(node.children);
+    }
+  }
+
+  return nodes;
+}
+
 function buildFileTree(filePaths: { path: string; tabKey: string }[]): TreeNode[] {
   const root: TreeNode = { name: '', path: '', isFolder: true, children: [] };
 
@@ -103,7 +119,7 @@ function buildFileTree(filePaths: { path: string; tabKey: string }[]): TreeNode[
     }
   }
 
-  return root.children || [];
+  return sortTreeNodes(root.children || []);
 }
 
 function getFileIcon(filename: string) {

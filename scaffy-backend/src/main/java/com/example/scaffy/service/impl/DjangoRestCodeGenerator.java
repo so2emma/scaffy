@@ -185,6 +185,65 @@ public class DjangoRestCodeGenerator implements CodeGenerator {
     }
 
     @Override
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        Map<String, String> preview = new LinkedHashMap<>();
+        String projectNameSnake = toSnakeCase(diagram.getProjectName());
+        String projectFolder = projectNameSnake + "/";
+        String appName = "api";
+
+        boolean openApiSupport = diagram.isOpenApiSupport() || diagram.isFeatureEnabled("openApi");
+        boolean generateTestStubs = diagram.isGenerateTestStubs() || diagram.isFeatureEnabled("djangoTests");
+
+        List<Map<String, Object>> preparedEntities = new ArrayList<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            preparedEntities.add(prepareEntityModel(entity, diagram));
+        }
+
+        Map<String, Object> rootModel = new HashMap<>();
+        rootModel.put("projectName", diagram.getProjectName());
+        rootModel.put("projectNameSnake", projectNameSnake);
+        rootModel.put("appName", appName);
+        rootModel.put("preparedEntities", preparedEntities);
+        rootModel.put("openApiSupport", openApiSupport);
+        rootModel.put("generateTestStubs", generateTestStubs);
+
+        preview.put(projectFolder + "manage.py", renderTemplateToString("manage.py.ftl", rootModel));
+        preview.put(projectFolder + "requirements.txt", renderTemplateToString("requirements.txt.ftl", rootModel));
+        preview.put(projectFolder + "README.md", renderTemplateToString("README.md.ftl", rootModel));
+
+        String projPkg = projectFolder + projectNameSnake + "/";
+        preview.put(projPkg + "__init__.py", renderTemplateToString("project_init.py.ftl", rootModel));
+        preview.put(projPkg + "settings.py", renderTemplateToString("settings.py.ftl", rootModel));
+        preview.put(projPkg + "urls.py", renderTemplateToString("urls.py.ftl", rootModel));
+        preview.put(projPkg + "wsgi.py", renderTemplateToString("wsgi.py.ftl", rootModel));
+
+        String appPkg = projectFolder + appName + "/";
+        preview.put(appPkg + "__init__.py", renderTemplateToString("app_init.py.ftl", rootModel));
+        preview.put(appPkg + "models.py", renderTemplateToString("models.py.ftl", rootModel));
+        preview.put(appPkg + "serializers.py", renderTemplateToString("serializers.py.ftl", rootModel));
+        preview.put(appPkg + "views.py", renderTemplateToString("views.py.ftl", rootModel));
+        preview.put(appPkg + "urls.py", renderTemplateToString("app_urls.py.ftl", rootModel));
+        preview.put(appPkg + "admin.py", renderTemplateToString("admin.py.ftl", rootModel));
+
+        if (generateTestStubs) {
+            preview.put(appPkg + "tests.py", renderTemplateToString("tests.py.ftl", rootModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put(projectFolder + "Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put(projectFolder + "docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put(projectFolder + ".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(projectFolder + ".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
+        return preview;
+    }
+
+    @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
         if ("__PROJECT__".equalsIgnoreCase(entityName)) {
             Map<String, String> preview = new LinkedHashMap<>();

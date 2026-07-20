@@ -225,6 +225,91 @@ public class ExpressCodeGenerator implements CodeGenerator {
     }
 
     @Override
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        Map<String, String> preview = new LinkedHashMap<>();
+        String projectFolder = toSnakeCase(diagram.getProjectName()) + "/";
+
+        Map<String, String> entityIdTypes = new HashMap<>();
+        Map<String, String> entityIdNames = new HashMap<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            String idType = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(AttributeDto::getType)
+                    .findFirst()
+                    .orElse("Long");
+            entityIdTypes.put(entity.getName(), idType);
+
+            String idName = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(AttributeDto::getName)
+                    .findFirst()
+                    .orElse("id");
+            entityIdNames.put(entity.getName(), idName);
+        }
+
+        List<Map<String, Object>> preparedEntities = new ArrayList<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            preparedEntities.add(prepareExpressEntityModel(entity, diagram, entityIdTypes, entityIdNames));
+        }
+
+        List<Map<String, Object>> globalEnums = new ArrayList<>();
+        for (Map<String, Object> entityModel : preparedEntities) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> enums = (List<Map<String, Object>>) entityModel.get("enums");
+            if (enums != null) {
+                globalEnums.addAll(enums);
+            }
+        }
+
+        Map<String, Object> rootModel = new HashMap<>();
+        rootModel.put("projectName", diagram.getProjectName());
+        rootModel.put("basePackage", diagram.getBasePackage());
+        rootModel.put("entities", diagram.getEntities());
+        rootModel.put("relationships", diagram.getRelationships());
+        rootModel.put("preparedEntities", preparedEntities);
+        rootModel.put("globalEnums", globalEnums);
+        rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+        rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+        rootModel.put("flywayMigration", diagram.isFlywayMigration());
+
+        preview.put(projectFolder + "package.json", renderTemplateToString("package.json.ftl", rootModel));
+        preview.put(projectFolder + "tsconfig.json", renderTemplateToString("tsconfig.json.ftl", rootModel));
+        preview.put(projectFolder + "prisma/schema.prisma", renderTemplateToString("schema.prisma.ftl", rootModel));
+        preview.put(projectFolder + ".env", renderTemplateToString(".env.ftl", rootModel));
+        preview.put(projectFolder + "README.md", renderTemplateToString("README.md.ftl", rootModel));
+        preview.put(projectFolder + "src/index.ts", renderTemplateToString("index.ts.ftl", rootModel));
+        preview.put(projectFolder + "src/app.ts", renderTemplateToString("app.ts.ftl", rootModel));
+        preview.put(projectFolder + "src/config/database.ts", renderTemplateToString("database.ts.ftl", rootModel));
+        preview.put(projectFolder + "src/errors/apiError.ts", renderTemplateToString("apiError.ts.ftl", rootModel));
+        preview.put(projectFolder + "src/middleware/errorHandler.ts", renderTemplateToString("errorHandler.ts.ftl", rootModel));
+        preview.put(projectFolder + "src/routes/index.ts", renderTemplateToString("indexRoute.ts.ftl", rootModel));
+
+        for (int i = 0; i < diagram.getEntities().size(); i++) {
+            EntityDto entity = diagram.getEntities().get(i);
+            Map<String, Object> entityModel = preparedEntities.get(i);
+            String name = entity.getName();
+            String uncapName = toLowerCamelCase(name);
+
+            preview.put(projectFolder + "src/services/" + uncapName + "Service.ts", renderTemplateToString("service.ts.ftl", entityModel));
+            preview.put(projectFolder + "src/controllers/" + uncapName + "Controller.ts", renderTemplateToString("controller.ts.ftl", entityModel));
+            preview.put(projectFolder + "src/routes/" + uncapName + "Route.ts", renderTemplateToString("route.ts.ftl", entityModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put(projectFolder + "Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put(projectFolder + "docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put(projectFolder + ".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(projectFolder + ".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
+        return preview;
+    }
+
+    @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
         if ("__PROJECT__".equalsIgnoreCase(entityName)) {
             Map<String, String> preview = new LinkedHashMap<>();

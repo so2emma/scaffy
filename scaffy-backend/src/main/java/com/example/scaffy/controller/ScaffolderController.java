@@ -69,6 +69,16 @@ public class ScaffolderController {
         }
     }
 
+    @PostMapping("/preview/all")
+    public ResponseEntity<?> previewAll(@RequestBody DiagramDto diagram) {
+        try {
+            java.util.Map<String, String> preview = codeGeneratorService.generateFullPreview(diagram);
+            return ResponseEntity.ok(preview);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to render preview: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/reverse-engineer/ddl")
     public ResponseEntity<?> reverseEngineerDdl(@RequestBody String ddl) {
         try {

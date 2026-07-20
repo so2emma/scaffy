@@ -41,6 +41,11 @@ public class CodeGeneratorService {
         return generator.generatePreview(diagram, entityName);
     }
 
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        CodeGenerator generator = findGenerator(diagram.getTargetFramework());
+        return generator.generateFullPreview(diagram);
+    }
+
     private CodeGenerator findGenerator(String framework) {
         return generators.stream()
                 .filter(g -> g.supports(framework))

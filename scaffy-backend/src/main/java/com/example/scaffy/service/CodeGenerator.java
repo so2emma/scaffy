@@ -11,6 +11,7 @@ public interface CodeGenerator {
     boolean supports(String framework);
     byte[] generateZip(DiagramDto diagram) throws Exception;
     Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception;
+    Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception;
 
     String getFrameworkId();
     String getDisplayName();

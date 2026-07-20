@@ -71,6 +71,17 @@ public class GinCodeGenerator implements CodeGenerator {
     }
 
     @Override
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        Map<String, String> rawFiles = generateAllFiles(diagram);
+        String projectFolder = toSnakeCase(diagram.getProjectName()) + "/";
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, String> entry : rawFiles.entrySet()) {
+            result.put(projectFolder + entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
         if ("__PROJECT__".equalsIgnoreCase(entityName)) {
             Map<String, String> preview = new LinkedHashMap<>();

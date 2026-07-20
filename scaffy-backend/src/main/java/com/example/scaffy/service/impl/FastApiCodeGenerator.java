@@ -230,6 +230,92 @@ public class FastApiCodeGenerator implements CodeGenerator {
     }
 
     @Override
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        Map<String, String> preview = new LinkedHashMap<>();
+        String projectFolder = toSnakeCase(diagram.getProjectName()) + "/";
+
+        Map<String, String> entityIdTypes = new HashMap<>();
+        Map<String, String> tableNames = new HashMap<>();
+        Map<String, String> pkColumnNames = new HashMap<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            String idType = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(AttributeDto::getType)
+                    .findFirst()
+                    .orElse("Long");
+            entityIdTypes.put(entity.getName(), idType);
+            tableNames.put(entity.getName(), (entity.getTableName() != null && !entity.getTableName().trim().isEmpty())
+                    ? entity.getTableName().trim() : toSnakeCase(entity.getName()));
+            
+            String pkColumnName = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(attr -> toSnakeCase(attr.getName()))
+                    .findFirst()
+                    .orElse("id");
+            pkColumnNames.put(entity.getName(), pkColumnName);
+        }
+
+        List<Map<String, Object>> preparedEntities = new ArrayList<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes, tableNames, pkColumnNames));
+        }
+
+        Map<String, Object> rootModel = new HashMap<>();
+        rootModel.put("projectName", diagram.getProjectName());
+        rootModel.put("entities", diagram.getEntities());
+        rootModel.put("relationships", diagram.getRelationships());
+        rootModel.put("entityIdTypes", entityIdTypes);
+        rootModel.put("tableNames", tableNames);
+        rootModel.put("pkColumnNames", pkColumnNames);
+        rootModel.put("preparedEntities", preparedEntities);
+        rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+        rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+        rootModel.put("toSnakeCase", new freemarker.template.TemplateMethodModelEx() {
+            @Override
+            public Object exec(List args) {
+                if (args.isEmpty() || args.get(0) == null) return "";
+                return toSnakeCase(args.get(0).toString());
+            }
+        });
+
+        preview.put(projectFolder + "requirements.txt", renderTemplateToString("requirements.txt.ftl", rootModel));
+        preview.put(projectFolder + "README.md", renderTemplateToString("README.md.ftl", rootModel));
+        preview.put(projectFolder + "app/__init__.py", "");
+        preview.put(projectFolder + "app/config.py", renderTemplateToString("config.py.ftl", rootModel));
+        preview.put(projectFolder + "app/database.py", renderTemplateToString("database.py.ftl", rootModel));
+        preview.put(projectFolder + "app/models/__init__.py", renderTemplateToString("models_init.py.ftl", rootModel));
+        preview.put(projectFolder + "app/models/base.py", renderTemplateToString("models_base.py.ftl", rootModel));
+        preview.put(projectFolder + "app/schemas/__init__.py", renderTemplateToString("schemas_init.py.ftl", rootModel));
+        preview.put(projectFolder + "app/crud/__init__.py", renderTemplateToString("crud_init.py.ftl", rootModel));
+        preview.put(projectFolder + "app/routers/__init__.py", renderTemplateToString("routers_init.py.ftl", rootModel));
+        preview.put(projectFolder + "app/main.py", renderTemplateToString("main.py.ftl", rootModel));
+
+        for (int i = 0; i < diagram.getEntities().size(); i++) {
+            EntityDto entity = diagram.getEntities().get(i);
+            Map<String, Object> entityModel = preparedEntities.get(i);
+            String snakeName = toSnakeCase(entity.getName());
+
+            preview.put(projectFolder + "app/models/" + snakeName + ".py", renderTemplateToString("model.py.ftl", entityModel));
+            preview.put(projectFolder + "app/schemas/" + snakeName + ".py", renderTemplateToString("schema.py.ftl", entityModel));
+            preview.put(projectFolder + "app/crud/" + snakeName + ".py", renderTemplateToString("crud.py.ftl", entityModel));
+            preview.put(projectFolder + "app/routers/" + snakeName + ".py", renderTemplateToString("router.py.ftl", entityModel));
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put(projectFolder + "Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put(projectFolder + "docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put(projectFolder + ".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(projectFolder + ".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
+        return preview;
+    }
+
+    @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
         if ("__PROJECT__".equalsIgnoreCase(entityName)) {
             Map<String, String> preview = new LinkedHashMap<>();

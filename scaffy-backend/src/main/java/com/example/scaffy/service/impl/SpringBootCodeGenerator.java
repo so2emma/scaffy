@@ -246,6 +246,105 @@ public class SpringBootCodeGenerator implements CodeGenerator {
     }
 
     @Override
+    public Map<String, String> generateFullPreview(DiagramDto diagram) throws Exception {
+        Map<String, String> preview = new LinkedHashMap<>();
+        String projectFolder = toSnakeCase(diagram.getProjectName()) + "/";
+
+        Map<String, String> entityIdTypes = new HashMap<>();
+        Map<String, String> tableNames = new HashMap<>();
+        Map<String, String> pkColumnNames = new HashMap<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            String idType = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(AttributeDto::getType)
+                    .findFirst()
+                    .orElse("Long");
+            entityIdTypes.put(entity.getName(), idType);
+            tableNames.put(entity.getName(), entity.getTableName());
+            
+            String pkColumnName = entity.getAttributes().stream()
+                    .filter(AttributeDto::isPrimaryKey)
+                    .map(attr -> toSnakeCase(attr.getName()))
+                    .findFirst()
+                    .orElse("id");
+            pkColumnNames.put(entity.getName(), pkColumnName);
+        }
+
+        List<Map<String, Object>> preparedEntities = new ArrayList<>();
+        for (EntityDto entity : diagram.getEntities()) {
+            preparedEntities.add(prepareEntityModel(entity, diagram, entityIdTypes));
+        }
+
+        Map<String, Object> rootModel = new HashMap<>();
+        rootModel.put("basePackage", diagram.getBasePackage());
+        rootModel.put("projectName", diagram.getProjectName());
+        rootModel.put("entities", diagram.getEntities());
+        rootModel.put("relationships", diagram.getRelationships());
+        rootModel.put("entityIdTypes", entityIdTypes);
+        rootModel.put("tableNames", tableNames);
+        rootModel.put("pkColumnNames", pkColumnNames);
+        rootModel.put("preparedEntities", preparedEntities);
+        rootModel.put("openApiSupport", diagram.isOpenApiSupport());
+        rootModel.put("generateTestStubs", diagram.isGenerateTestStubs());
+        rootModel.put("flywayMigration", diagram.isFlywayMigration());
+
+        preview.put(projectFolder + "pom.xml", renderTemplateToString("pom.xml.ftl", rootModel));
+        preview.put(projectFolder + "src/main/resources/application.properties", renderTemplateToString("application.properties.ftl", rootModel));
+
+        if (diagram.isFlywayMigration()) {
+            preview.put(projectFolder + "src/main/resources/db/migration/V1__init.sql", renderTemplateToString("V1__init.sql.ftl", rootModel));
+        }
+
+        String packagePath = "src/main/java/" + diagram.getBasePackage().replace('.', '/') + "/";
+        preview.put(projectFolder + packagePath + diagram.getProjectName() + "Application.java", renderTemplateToString("Application.java.ftl", rootModel));
+        preview.put(projectFolder + packagePath + "exception/ResourceNotFoundException.java", renderTemplateToString("ResourceNotFoundException.java.ftl", rootModel));
+        preview.put(projectFolder + packagePath + "exception/GlobalExceptionHandler.java", renderTemplateToString("GlobalExceptionHandler.java.ftl", rootModel));
+
+        for (int i = 0; i < diagram.getEntities().size(); i++) {
+            EntityDto entity = diagram.getEntities().get(i);
+            Map<String, Object> entityModel = preparedEntities.get(i);
+            String name = entity.getName();
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> enums = (List<Map<String, Object>>) entityModel.get("enums");
+            for (Map<String, Object> enumData : enums) {
+                preview.put(projectFolder + packagePath + "entity/" + enumData.get("enumClassName") + ".java", renderTemplateToString("Enum.java.ftl", enumData));
+            }
+
+            preview.put(projectFolder + packagePath + "entity/" + name + ".java", renderTemplateToString("Entity.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "dto/" + name + "RequestDto.java", renderTemplateToString("RequestDto.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "dto/" + name + "ResponseDto.java", renderTemplateToString("ResponseDto.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "mapper/" + name + "Mapper.java", renderTemplateToString("Mapper.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "repository/" + name + "Repository.java", renderTemplateToString("Repository.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "service/" + name + "Service.java", renderTemplateToString("Service.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "service/impl/" + name + "ServiceImpl.java", renderTemplateToString("ServiceImpl.java.ftl", entityModel));
+            preview.put(projectFolder + packagePath + "controller/" + name + "Controller.java", renderTemplateToString("Controller.java.ftl", entityModel));
+        }
+
+        if (diagram.isGenerateTestStubs()) {
+            for (int i = 0; i < diagram.getEntities().size(); i++) {
+                EntityDto entity = diagram.getEntities().get(i);
+                Map<String, Object> entityModel = preparedEntities.get(i);
+                String name = entity.getName();
+                preview.put(projectFolder + "src/test/java/" + diagram.getBasePackage().replace('.', '/') + "/service/" + name + "ServiceImplTest.java", renderTemplateToString("ServiceImplTest.java.ftl", entityModel));
+            }
+        }
+
+        Boolean dockerEnabled = diagram.getEnabledFeatures() != null
+                && Boolean.TRUE.equals(diagram.getEnabledFeatures().get("dockerFile"));
+        if (dockerEnabled) {
+            String framework = getFrameworkId();
+            String projName = diagram.getProjectName();
+            preview.put(projectFolder + "Dockerfile", DockerFileGenerator.generateDockerfile(framework, projName));
+            preview.put(projectFolder + "docker-compose.yml", DockerFileGenerator.generateDockerCompose(framework, projName));
+            preview.put(projectFolder + ".github/workflows/ci.yml", DockerFileGenerator.generateGithubActionsWorkflow(framework, projName));
+            preview.put(projectFolder + ".env.example", DockerFileGenerator.generateDotEnvExample(framework, projName));
+        }
+
+        return preview;
+    }
+
+    @Override
     public Map<String, String> generatePreview(DiagramDto diagram, String entityName) throws Exception {
         if ("__PROJECT__".equalsIgnoreCase(entityName)) {
             Map<String, String> preview = new LinkedHashMap<>();

@@ -4,7 +4,7 @@ import { useDiagramStore } from '../store/useDiagramStore';
 import { useToast } from '../hooks/useToast';
 import {
   Terminal, RefreshCw, AlertTriangle, ChevronDown, ChevronUp,
-  ChevronRight, FileCode, FileText, Database, TestTube, Copy, Check,
+  ChevronRight, FileCode, FileText, Database, TestTube, Copy, Check, Box,
 } from 'lucide-react';
 
 interface CodePreviewDrawerProps {
@@ -49,6 +49,7 @@ function buildFileTree(filePaths: { path: string; tabKey: string }[]): TreeNode[
 
 function getFileIcon(filename: string) {
   const lower = filename.toLowerCase();
+  if (lower === 'dockerfile') return <Box size={13} className="shrink-0 text-sky-400" />;
   if (lower.endsWith('.sql')) return <Database size={13} className="shrink-0 text-amber-500" />;
   if (lower.includes('test') || lower.includes('spec'))
     return <TestTube size={13} className="shrink-0 text-primary" />;
@@ -234,6 +235,12 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
         if (tab === 'RSpec') return `${projNameSnake}/spec/models/${entitySnake}_spec.rb`;
       }
 
+      // Docker / CI files — framework-agnostic
+      if (tab === 'Dockerfile') return `${projNameSnake}/Dockerfile`;
+      if (tab === 'docker-compose') return `${projNameSnake}/docker-compose.yml`;
+      if (tab === 'GitHub CI') return `${projNameSnake}/.github/workflows/ci.yml`;
+      if (tab === '.env.example') return `${projNameSnake}/.env.example`;
+
       return `${projNameSnake}/${tab}`;
     },
     [projectName, basePackage, entityName, targetFramework]
@@ -335,6 +342,10 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   const activeFilePath = getFilePathForTab(activeTab);
 
   const getEditorLanguage = () => {
+    if (activeTab === 'Dockerfile') return 'dockerfile';
+    if (activeTab === 'docker-compose') return 'yaml';
+    if (activeTab === 'GitHub CI') return 'yaml';
+    if (activeTab === '.env.example') return 'plaintext';
     if (activeTab === 'Flyway SQL') return 'sql';
     if (activeTab === 'Prisma Schema') return 'prisma';
     if (targetFramework === 'EXPRESS') return 'typescript';

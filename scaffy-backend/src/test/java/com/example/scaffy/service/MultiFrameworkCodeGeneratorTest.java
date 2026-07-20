@@ -4,9 +4,10 @@ import com.example.scaffy.model.*;
 import com.example.scaffy.service.impl.*;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,6 +80,42 @@ public class MultiFrameworkCodeGeneratorTest {
             byte[] zipBytes = generator.generateZip(diagram);
             assertNotNull(zipBytes, "Zip bytes should not be null for " + generator.getFrameworkId());
             assertTrue(zipBytes.length > 0, "Zip bytes length should be > 0 for " + generator.getFrameworkId());
+        }
+    }
+
+    @Test
+    public void testDockerAndCiGenerationForAllFrameworks() throws Exception {
+        DiagramDto diagram = createSampleDiagram();
+        diagram.getEnabledFeatures().put("dockerFile", true);
+
+        for (CodeGenerator generator : generators) {
+            diagram.setTargetFramework(generator.getFrameworkId());
+            System.out.println("Testing Docker & CI generation for: " + generator.getDisplayName());
+
+            // Test preview includes Docker & CI tabs
+            Map<String, String> preview = generator.generatePreview(diagram, "User");
+            assertTrue(preview.containsKey("Dockerfile"), "Dockerfile missing in preview for " + generator.getFrameworkId());
+            assertTrue(preview.containsKey("docker-compose"), "docker-compose missing in preview for " + generator.getFrameworkId());
+            assertTrue(preview.containsKey("GitHub CI"), "GitHub CI missing in preview for " + generator.getFrameworkId());
+            assertTrue(preview.containsKey(".env.example"), ".env.example missing in preview for " + generator.getFrameworkId());
+
+            // Test ZIP includes Docker & CI files
+            byte[] zipBytes = generator.generateZip(diagram);
+            assertNotNull(zipBytes);
+
+            Set<String> entryNames = new HashSet<>();
+            try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    entryNames.add(entry.getName());
+                }
+            }
+
+            String projFolder = "test_project/";
+            assertTrue(entryNames.contains(projFolder + "Dockerfile"), "Dockerfile missing in zip for " + generator.getFrameworkId());
+            assertTrue(entryNames.contains(projFolder + "docker-compose.yml"), "docker-compose.yml missing in zip for " + generator.getFrameworkId());
+            assertTrue(entryNames.contains(projFolder + ".github/workflows/ci.yml"), "ci.yml missing in zip for " + generator.getFrameworkId());
+            assertTrue(entryNames.contains(projFolder + ".env.example"), ".env.example missing in zip for " + generator.getFrameworkId());
         }
     }
 }

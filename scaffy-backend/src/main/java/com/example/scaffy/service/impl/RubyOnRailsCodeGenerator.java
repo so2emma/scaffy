@@ -242,10 +242,10 @@ public class RubyOnRailsCodeGenerator implements CodeGenerator {
                 default: &default
                   adapter: postgresql
                   encoding: unicode
-                  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-                  username: <%= ENV.fetch("DATABASE_USER") { "postgres" } %>
-                  password: <%= ENV.fetch("DATABASE_PASSWORD") { "postgres" } %>
-                  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+                  pool: <%%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %%>
+                  username: <%%= ENV.fetch("DATABASE_USER") { "postgres" } %%>
+                  password: <%%= ENV.fetch("DATABASE_PASSWORD") { "postgres" } %%>
+                  host: <%%= ENV.fetch("DATABASE_HOST") { "localhost" } %%>
                 
                 development:
                   <<: *default
@@ -257,7 +257,7 @@ public class RubyOnRailsCodeGenerator implements CodeGenerator {
                 
                 production:
                   <<: *default
-                  url: <%= ENV['DATABASE_URL'] %>
+                  url: <%%= ENV['DATABASE_URL'] %%>
                 """.formatted(dbName, dbName);
     }
 

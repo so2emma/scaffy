@@ -179,7 +179,7 @@ function ScaffyAppContent() {
               onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
             />
           </ReactFlowProvider>
-          {selectedEntityName && <CodePreviewDrawer entityName={selectedEntityName} />}
+          <CodePreviewDrawer selectedEntityName={selectedEntityName} />
         </div>
 
         <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />

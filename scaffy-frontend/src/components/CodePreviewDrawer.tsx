@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 interface CodePreviewDrawerProps {
-  entityName: string;
+  selectedEntityName: string | null;
 }
 
 interface TreeNode {
@@ -21,7 +21,7 @@ interface TreeNode {
 }
 
 interface SearchResult {
-  tabKey: string;
+  filePath: string;
   fileName: string;
   lineNumber: number;
   lineContent: string;
@@ -46,6 +46,17 @@ const BADGE_STYLES: Record<string, string> = {
   rails: 'text-red-400 bg-red-400/10',
 };
 
+const FRAMEWORK_COLORS: Record<string, string> = {
+  SPRING_BOOT: '#4ade80',
+  EXPRESS: '#38bdf8',
+  FASTAPI: '#fb923c',
+  NESTJS: '#e879f9',
+  DJANGO_REST: '#f59e0b',
+  LARAVEL: '#f43f5e',
+  GIN: '#34d399',
+  RAILS: '#f87171',
+};
+
 const FRAMEWORK_OPTIONS = [
   { id: 'SPRING_BOOT', label: 'Spring Boot' },
   { id: 'EXPRESS', label: 'Express' },
@@ -57,54 +68,42 @@ const FRAMEWORK_OPTIONS = [
   { id: 'RAILS', label: 'Ruby on Rails' },
 ];
 
-const CATEGORY_MAP: { id: string; label: string; icon: string; keys: string[] }[] = [
-  { id: 'App', label: 'Application Layer', icon: '📦', keys: ['Entity', 'Model', 'Models', 'Model (SQLAlchemy)', 'Schema (Pydantic)', 'Prisma Schema'] },
-  { id: 'API', label: 'API Layer', icon: '🔌', keys: ['Controller', 'Handler', 'Route', 'Router', 'Views', 'URLs'] },
-  { id: 'Logic', label: 'Business Logic', icon: '⚙️', keys: ['Service', 'ServiceImpl', 'CRUD Helpers', 'Repository'] },
-  { id: 'DTO', label: 'Data Transfer', icon: '📋', keys: ['Request DTO', 'Response DTO', 'Create DTO', 'Update DTO', 'Mapper', 'Store Request', 'Update Request', 'API Resource', 'Serializer', 'Serializers'] },
-  { id: 'DB', label: 'Database', icon: '🗄️', keys: ['Migration', 'Flyway SQL', 'Database Config', 'Database', 'Admin'] },
-  { id: 'Tests', label: 'Tests', icon: '🧪', keys: ['Unit Test', 'Feature Test', 'Tests', 'RSpec'] },
-  { id: 'Infra', label: 'Infrastructure', icon: '⚡', keys: ['Dockerfile', 'docker-compose', 'GitHub CI', '.env.example', 'App Module', 'Module', 'App Configuration', 'Settings', 'Main', 'Main App', 'Routes', 'go.mod'] },
+const CATEGORY_ORDER = [
+  '📦 Application Layer',
+  '🔌 API Layer',
+  '⚙️ Business Logic',
+  '📋 Data Transfer',
+  '🗄️ Database',
+  '🧪 Tests',
+  '⚡ Infrastructure',
 ];
 
-function getCategoryForTabKey(tabKey: string, isProjectFile: boolean): string {
-  if (isProjectFile) return 'Project Configuration';
-  if (tabKey.startsWith('Enum ')) return 'Application Layer';
-  for (const cat of CATEGORY_MAP) {
-    if (cat.keys.includes(tabKey)) return cat.label;
-  }
-  return 'Infrastructure';
-}
+function buildFileTree(filePaths: { path: string; tabKey: string }[]): TreeNode[] {
+  const root: TreeNode = { name: '', path: '', isFolder: true, children: [] };
 
-function getEquivalentTabKey(activeTab: string, compareFramework: string, targetFiles: Record<string, string>): string {
-  if (targetFiles[activeTab]) return activeTab;
-  const tabLower = activeTab.toLowerCase();
+  for (const { path, tabKey } of filePaths) {
+    const parts = path.split('/');
+    let current = root;
 
-  if (tabLower.includes('entity') || tabLower.includes('model')) {
-    const found = Object.keys(targetFiles).find((k) => k.toLowerCase().includes('entity') || k.toLowerCase().includes('model'));
-    if (found) return found;
-  }
-  if (tabLower.includes('controller') || tabLower.includes('handler') || tabLower.includes('views') || tabLower.includes('route')) {
-    const found = Object.keys(targetFiles).find(
-      (k) =>
-        k.toLowerCase().includes('controller') ||
-        k.toLowerCase().includes('handler') ||
-        k.toLowerCase().includes('views') ||
-        k.toLowerCase().includes('route')
-    );
-    if (found) return found;
-  }
-  if (tabLower.includes('service') || tabLower.includes('crud')) {
-    const found = Object.keys(targetFiles).find((k) => k.toLowerCase().includes('service') || k.toLowerCase().includes('crud'));
-    if (found) return found;
-  }
-  if (tabLower.includes('test') || tabLower.includes('spec')) {
-    const found = Object.keys(targetFiles).find((k) => k.toLowerCase().includes('test') || k.toLowerCase().includes('spec'));
-    if (found) return found;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isLast = i === parts.length - 1;
+      const currentPath = parts.slice(0, i + 1).join('/');
+
+      if (isLast) {
+        current.children!.push({ name: part, path: currentPath, isFolder: false, tabKey });
+      } else {
+        let folder = current.children!.find((c) => c.isFolder && c.name === part);
+        if (!folder) {
+          folder = { name: part, path: currentPath, isFolder: true, children: [] };
+          current.children!.push(folder);
+        }
+        current = folder;
+      }
+    }
   }
 
-  const keys = Object.keys(targetFiles);
-  return keys.length > 0 ? keys[0] : activeTab;
+  return root.children || [];
 }
 
 function getFileIcon(filename: string) {
@@ -116,6 +115,7 @@ function getFileIcon(filename: string) {
   if (
     lower.endsWith('.java') ||
     lower.endsWith('.ts') ||
+    lower.endsWith('.tsx') ||
     lower.endsWith('.py') ||
     lower.endsWith('.prisma') ||
     lower.endsWith('.go') ||
@@ -126,7 +126,222 @@ function getFileIcon(filename: string) {
   return <FileText size={13} className="shrink-0 text-subtle" />;
 }
 
-export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName }) => {
+function getLanguageFromPath(path: string): string {
+  const p = path.toLowerCase();
+  if (p.endsWith('.java')) return 'java';
+  if (p.endsWith('.ts') || p.endsWith('.tsx')) return 'typescript';
+  if (p.endsWith('.js') || p.endsWith('.jsx')) return 'javascript';
+  if (p.endsWith('.py')) return 'python';
+  if (p.endsWith('.go')) return 'go';
+  if (p.endsWith('.rb') || p.endsWith('.rspec') || p.includes('gemfile')) return 'ruby';
+  if (p.endsWith('.php')) return 'php';
+  if (p.endsWith('.sql')) return 'sql';
+  if (p.endsWith('.yml') || p.endsWith('.yaml')) return 'yaml';
+  if (p.endsWith('.json')) return 'json';
+  if (p.endsWith('.xml')) return 'xml';
+  if (p.endsWith('.properties') || p.endsWith('.ini') || p.endsWith('.toml')) return 'ini';
+  if (p.endsWith('.md')) return 'markdown';
+  if (p.endsWith('.prisma')) return 'prisma';
+  if (p.endsWith('dockerfile')) return 'dockerfile';
+  return 'plaintext';
+}
+
+function filesBelongsToEntity(filePath: string, selectedEntityName: string | null): boolean {
+  if (!selectedEntityName) return false;
+  const basename = filePath.split('/').pop() ?? '';
+  return basename.startsWith(selectedEntityName);
+}
+
+function getCategoryFromPath(filePath: string): string {
+  const lower = filePath.toLowerCase();
+  const filename = (filePath.split('/').pop() ?? '').toLowerCase();
+
+  // 🧪 Tests
+  if (
+    lower.includes('/test') ||
+    lower.includes('/spec') ||
+    lower.includes('test.java') ||
+    lower.includes('spec.ts') ||
+    lower.endsWith('_test.go') ||
+    lower.includes('rspec')
+  ) {
+    return '🧪 Tests';
+  }
+
+  // 📋 Data Transfer
+  if (
+    lower.includes('/dto') ||
+    lower.includes('requestdto') ||
+    lower.includes('responsedto') ||
+    lower.includes('createdto') ||
+    lower.includes('updatedto') ||
+    lower.includes('/mapper') ||
+    lower.includes('mapper.java') ||
+    lower.includes('serializer') ||
+    lower.includes('/resource') ||
+    lower.includes('storerequest') ||
+    lower.includes('updaterequest') ||
+    filename.includes('dto') ||
+    filename.includes('serializer') ||
+    filename.includes('resource')
+  ) {
+    return '📋 Data Transfer';
+  }
+
+  // 🔌 API Layer
+  if (
+    lower.includes('/controller') ||
+    lower.includes('controller.') ||
+    lower.includes('/handler') ||
+    lower.includes('handler.') ||
+    lower.includes('/route') ||
+    lower.includes('/router') ||
+    lower.includes('/views') ||
+    lower.includes('views.') ||
+    lower.includes('/urls') ||
+    lower.includes('urls.')
+  ) {
+    return '🔌 API Layer';
+  }
+
+  // ⚙️ Business Logic
+  if (
+    lower.includes('/service') ||
+    lower.includes('service.') ||
+    lower.includes('serviceimpl') ||
+    lower.includes('/repository') ||
+    lower.includes('/repositories') ||
+    lower.includes('repository.') ||
+    lower.includes('/crud') ||
+    lower.includes('crud.')
+  ) {
+    return '⚙️ Business Logic';
+  }
+
+  // 📦 Application Layer
+  if (
+    lower.includes('/entity/') ||
+    lower.includes('/entities/') ||
+    lower.endsWith('entity.java') ||
+    lower.endsWith('entity.ts') ||
+    lower.includes('/model') ||
+    lower.includes('/models') ||
+    lower.includes('/schemas/') ||
+    lower.endsWith('schema.prisma') ||
+    filename.startsWith('model')
+  ) {
+    return '📦 Application Layer';
+  }
+
+  // 🗄️ Database
+  if (
+    lower.includes('/migration') ||
+    lower.includes('/db/') ||
+    lower.endsWith('.sql') ||
+    lower.includes('/database') ||
+    lower.includes('/admin') ||
+    lower.endsWith('go.mod') ||
+    lower.includes('database.py') ||
+    lower.includes('database.go')
+  ) {
+    return '🗄️ Database';
+  }
+
+  // ⚡ Infrastructure
+  return '⚡ Infrastructure';
+}
+
+function getEquivalentFilePath(activePath: string, compareFilesMap: Record<string, string>): string {
+  if (compareFilesMap[activePath]) return activePath;
+  const filename = activePath.split('/').pop()?.toLowerCase() ?? '';
+
+  for (const p of Object.keys(compareFilesMap)) {
+    if (p.toLowerCase().endsWith(filename)) return p;
+  }
+  const category = getCategoryFromPath(activePath);
+  for (const p of Object.keys(compareFilesMap)) {
+    if (getCategoryFromPath(p) === category) return p;
+  }
+  return Object.keys(compareFilesMap)[0] ?? '';
+}
+
+interface TreeItemProps {
+  node: TreeNode;
+  depth: number;
+  activeFilePath: string;
+  selectedEntityName: string | null;
+  frameworkColor: string;
+  onSelect: (filePath: string) => void;
+  defaultExpanded?: boolean;
+}
+
+const TreeItem: React.FC<TreeItemProps> = ({
+  node,
+  depth,
+  activeFilePath,
+  selectedEntityName,
+  frameworkColor,
+  onSelect,
+  defaultExpanded = true,
+}) => {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  if (node.isFolder) {
+    return (
+      <>
+        <div
+          className="flex h-6 cursor-pointer items-center gap-1 whitespace-nowrap pr-2 text-[0.73rem] font-medium text-muted transition-colors hover:bg-surface-2"
+          style={{ paddingLeft: `${4 + depth * 14}px` }}
+          onClick={() => setExpanded(!expanded)}
+        >
+          <ChevronRight
+            size={11}
+            className={`shrink-0 text-subtle transition-transform ${expanded ? 'rotate-90' : ''}`}
+          />
+          <span className="overflow-hidden text-ellipsis">{node.name}</span>
+        </div>
+        {expanded &&
+          node.children &&
+          node.children.map((child) => (
+            <TreeItem
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              activeFilePath={activeFilePath}
+              selectedEntityName={selectedEntityName}
+              frameworkColor={frameworkColor}
+              onSelect={onSelect}
+              defaultExpanded={depth < 4}
+            />
+          ))}
+      </>
+    );
+  }
+
+  const isActive = node.path === activeFilePath;
+  const isEntityFile = filesBelongsToEntity(node.path, selectedEntityName);
+
+  return (
+    <div
+      data-filepath={node.path}
+      className={`group flex h-6 cursor-pointer items-center gap-1 whitespace-nowrap pr-2 text-[0.73rem] transition-all ${
+        isActive ? 'bg-surface-3 text-content font-semibold' : 'text-muted hover:bg-surface-2'
+      }`}
+      style={{
+        paddingLeft: isEntityFile ? `${depth * 14 + 4}px` : `${depth * 14 + 6}px`,
+        borderLeft: isEntityFile ? `3px solid ${frameworkColor}` : 'none',
+      }}
+      onClick={() => onSelect(node.path)}
+    >
+      {getFileIcon(node.name)}
+      <span className={`overflow-hidden text-ellipsis ${isEntityFile ? 'text-content font-medium' : ''}`}>
+        {node.name}
+      </span>
+    </div>
+  );
+};
+
+export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEntityName }) => {
   const getDiagramSchema = useDiagramStore((state) => state.getDiagramSchema);
   const theme = useDiagramStore((state) => state.theme);
   const nodes = useDiagramStore((state) => state.nodes);
@@ -134,20 +349,18 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   const projectName = useDiagramStore((state) => state.projectName);
   const basePackage = useDiagramStore((state) => state.basePackage);
   const targetFramework = useDiagramStore((state) => state.targetFramework);
+  const enabledFeatures = useDiagramStore((state) => state.enabledFeatures);
   const validationErrors = useDiagramStore((state) => state.validationErrors);
-
-  const openApiSupport = useDiagramStore((state) => state.enabledFeatures['openApi']);
-  const generateTestStubs = useDiagramStore((state) => state.enabledFeatures['mockitoTests']);
-  const flywayMigration = useDiagramStore((state) => state.enabledFeatures['flywayMigration']);
 
   const { showToast } = useToast();
 
-  // Primary file states
-  const [files, setFiles] = useState<Record<string, string>>({});
-  const [projectFiles, setProjectFiles] = useState<Record<string, string>>({});
-  const [activeTab, setActiveTab] = useState<string>('Entity');
+  // Full project file map (real path -> content)
+  const [allFiles, setAllFiles] = useState<Record<string, string>>({});
+  const [activeFilePath, setActiveFilePath] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Drawer layout states
   const [isMinimized, setIsMinimized] = useState<boolean>(true);
   const [drawerHeight, setDrawerHeight] = useState<number>(420);
   const [isResizingV, setIsResizingV] = useState<boolean>(false);
@@ -182,211 +395,70 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   const [compareFiles, setCompareFiles] = useState<Record<string, string>>({});
   const [isCompareFetching, setIsCompareFetching] = useState(false);
 
-  // Feature 7: Smart Sections & Category Filter
-  const [categoryFilter, setCategoryFilter] = useState<string>('All');
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  // Explorer View Tabs: 'all' (Full Directory Tree) vs 'entity' (Flat Categorized Entity File View)
+  const [activeExplorerTab, setActiveExplorerTab] = useState<'all' | 'entity'>('all');
 
-  // All combined files (entity + project wide)
-  const allFiles = useMemo(() => {
-    return { ...files, ...projectFiles };
-  }, [files, projectFiles]);
-
-  const getFilePathForTab = useCallback(
-    (tab: string): string => {
-      const projNameSnake = (projectName || 'scaffy').replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-      const pkgPath = (basePackage || 'com.example').replace(/\./g, '/');
-      const entitySnake = (entityName || 'entity').replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
-      const entityUncap = entityName ? entityName.charAt(0).toLowerCase() + entityName.slice(1) : 'entity';
-
-      if (targetFramework === 'SPRING_BOOT') {
-        if (tab === 'Entity') return `${projNameSnake}/src/main/java/${pkgPath}/entity/${entityName}.java`;
-        if (tab === 'Request DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}RequestDto.java`;
-        if (tab === 'Response DTO') return `${projNameSnake}/src/main/java/${pkgPath}/dto/${entityName}ResponseDto.java`;
-        if (tab === 'Mapper') return `${projNameSnake}/src/main/java/${pkgPath}/mapper/${entityName}Mapper.java`;
-        if (tab === 'Repository') return `${projNameSnake}/src/main/java/${pkgPath}/repository/${entityName}Repository.java`;
-        if (tab === 'Service') return `${projNameSnake}/src/main/java/${pkgPath}/service/${entityName}Service.java`;
-        if (tab === 'ServiceImpl') return `${projNameSnake}/src/main/java/${pkgPath}/service/impl/${entityName}ServiceImpl.java`;
-        if (tab === 'Controller') return `${projNameSnake}/src/main/java/${pkgPath}/controller/${entityName}Controller.java`;
-        if (tab === 'Flyway SQL') return `${projNameSnake}/src/main/resources/db/migration/V1__init.sql`;
-        if (tab === 'Unit Test') return `${projNameSnake}/src/test/java/${pkgPath}/service/${entityName}ServiceImplTest.java`;
-        if (tab === 'application.properties') return `${projNameSnake}/src/main/resources/application.properties`;
-        if (tab === 'pom.xml') return `${projNameSnake}/pom.xml`;
-        if (tab.startsWith('Enum ')) {
-          const enumClassName = tab.substring(5);
-          return `${projNameSnake}/src/main/java/${pkgPath}/entity/${enumClassName}.java`;
-        }
-      } else if (targetFramework === 'EXPRESS') {
-        if (tab === 'Prisma Schema') return `${projNameSnake}/prisma/schema.prisma`;
-        if (tab === 'Service') return `${projNameSnake}/src/services/${entityUncap}Service.ts`;
-        if (tab === 'Controller') return `${projNameSnake}/src/controllers/${entityUncap}Controller.ts`;
-        if (tab === 'Route') return `${projNameSnake}/src/routes/${entityUncap}Route.ts`;
-        if (tab === 'App Configuration') return `${projNameSnake}/src/app.ts`;
-        if (tab === 'package.json') return `${projNameSnake}/package.json`;
-      } else if (targetFramework === 'FASTAPI') {
-        if (tab === 'Model (SQLAlchemy)') return `${projNameSnake}/app/models/${entitySnake}.py`;
-        if (tab === 'Schema (Pydantic)') return `${projNameSnake}/app/schemas/${entitySnake}.py`;
-        if (tab === 'CRUD Helpers') return `${projNameSnake}/app/crud/${entitySnake}.py`;
-        if (tab === 'Router') return `${projNameSnake}/app/routers/${entitySnake}.py`;
-        if (tab === 'Main App') return `${projNameSnake}/app/main.py`;
-        if (tab === 'Database Config') return `${projNameSnake}/app/database.py`;
-        if (tab === 'requirements.txt') return `${projNameSnake}/requirements.txt`;
-      } else if (targetFramework === 'NESTJS') {
-        const entityKebab = entityName.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-        if (tab === 'Entity') return `${projNameSnake}/src/${entityKebab}/entities/${entityKebab}.entity.ts`;
-        if (tab === 'Create DTO') return `${projNameSnake}/src/${entityKebab}/dto/create-${entityKebab}.dto.ts`;
-        if (tab === 'Update DTO') return `${projNameSnake}/src/${entityKebab}/dto/update-${entityKebab}.dto.ts`;
-        if (tab === 'Service') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.ts`;
-        if (tab === 'Controller') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.controller.ts`;
-        if (tab === 'Module') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.module.ts`;
-        if (tab === 'App Module') return `${projNameSnake}/src/app.module.ts`;
-        if (tab === 'main.ts') return `${projNameSnake}/src/main.ts`;
-        if (tab === 'package.json') return `${projNameSnake}/package.json`;
-        if (tab === 'Unit Test') return `${projNameSnake}/src/${entityKebab}/${entityKebab}.service.spec.ts`;
-      } else if (targetFramework === 'DJANGO_REST') {
-        if (tab === 'Models') return `${projNameSnake}/api/models.py`;
-        if (tab === 'Serializers') return `${projNameSnake}/api/serializers.py`;
-        if (tab === 'Views') return `${projNameSnake}/api/views.py`;
-        if (tab === 'URLs') return `${projNameSnake}/api/urls.py`;
-        if (tab === 'Admin') return `${projNameSnake}/api/admin.py`;
-        if (tab === 'Settings') return `${projNameSnake}/${projNameSnake}/settings.py`;
-        if (tab === 'manage.py') return `${projNameSnake}/manage.py`;
-        if (tab === 'requirements.txt') return `${projNameSnake}/requirements.txt`;
-        if (tab === 'Tests') return `${projNameSnake}/api/tests.py`;
-      } else if (targetFramework === 'LARAVEL') {
-        if (tab === 'Model') return `${projNameSnake}/app/Models/${entityName}.php`;
-        if (tab === 'Controller') return `${projNameSnake}/app/Http/Controllers/Api/${entityName}Controller.php`;
-        if (tab === 'Store Request') return `${projNameSnake}/app/Http/Requests/Store${entityName}Request.php`;
-        if (tab === 'Update Request') return `${projNameSnake}/app/Http/Requests/Update${entityName}Request.php`;
-        if (tab === 'API Resource') return `${projNameSnake}/app/Http/Resources/${entityName}Resource.php`;
-        if (tab === 'Migration') return `${projNameSnake}/database/migrations/2024_01_01_000001_create_${entitySnake}s_table.php`;
-        if (tab === 'Routes' || tab === 'routes/api.php') return `${projNameSnake}/routes/api.php`;
-        if (tab === 'composer.json') return `${projNameSnake}/composer.json`;
-        if (tab === 'Feature Test') return `${projNameSnake}/tests/Feature/${entityName}Test.php`;
-      } else if (targetFramework === 'GIN') {
-        if (tab === 'Model') return `${projNameSnake}/internal/models/${entitySnake}.go`;
-        if (tab === 'Handler') return `${projNameSnake}/internal/handlers/${entitySnake}_handler.go`;
-        if (tab === 'Repository') return `${projNameSnake}/internal/repositories/${entitySnake}_repository.go`;
-        if (tab === 'Routes') return `${projNameSnake}/internal/routes/routes.go`;
-        if (tab === 'Database' || tab === 'internal/database/database.go') return `${projNameSnake}/internal/database/database.go`;
-        if (tab === 'Main' || tab === 'cmd/server/main.go') return `${projNameSnake}/cmd/server/main.go`;
-        if (tab === 'go.mod') return `${projNameSnake}/go.mod`;
-      } else if (targetFramework === 'RAILS') {
-        const entityPlural = `${entitySnake}s`;
-        if (tab === 'Model') return `${projNameSnake}/app/models/${entitySnake}.rb`;
-        if (tab === 'Controller') return `${projNameSnake}/app/controllers/api/v1/${entityPlural}_controller.rb`;
-        if (tab === 'Serializer') return `${projNameSnake}/app/serializers/${entitySnake}_serializer.rb`;
-        if (tab === 'Migration') return `${projNameSnake}/db/migrate/20240101000001_create_${entityPlural}.rb`;
-        if (tab === 'Routes' || tab === 'config/routes.rb') return `${projNameSnake}/config/routes.rb`;
-        if (tab === 'Gemfile') return `${projNameSnake}/Gemfile`;
-        if (tab === 'config/database.yml') return `${projNameSnake}/config/database.yml`;
-        if (tab === 'RSpec') return `${projNameSnake}/spec/models/${entitySnake}_spec.rb`;
-      }
-
-      // Docker / CI files
-      if (tab === 'Dockerfile') return `${projNameSnake}/Dockerfile`;
-      if (tab === 'docker-compose') return `${projNameSnake}/docker-compose.yml`;
-      if (tab === 'GitHub CI') return `${projNameSnake}/.github/workflows/ci.yml`;
-      if (tab === '.env.example') return `${projNameSnake}/.env.example`;
-
-      return `${projNameSnake}/${tab}`;
-    },
-    [projectName, basePackage, entityName, targetFramework]
-  );
-
-  // Fetch Entity Preview
-  const fetchPreview = useCallback(async () => {
+  // Fetch Full Project Codebase Preview
+  const fetchAllFiles = useCallback(async () => {
+    if (nodes.length === 0) {
+      setAllFiles({});
+      setActiveFilePath('');
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
     try {
       const schema = getDiagramSchema();
-      const response = await fetch(`http://localhost:8080/api/scaffold/preview?entityName=${entityName}`, {
+      const response = await fetch('http://localhost:8080/api/scaffold/preview/all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(schema),
       });
 
       if (response.ok) {
-        const previewMap = await response.json();
-        setFiles(previewMap);
-        setError(null);
-
-        if (previewMap && !previewMap[activeTab] && !projectFiles[activeTab]) {
-          const keys = Object.keys(previewMap);
-          if (keys.length > 0) setActiveTab(keys[0]);
-        }
+        const data: Record<string, string> = await response.json();
+        setAllFiles(data);
+        setActiveFilePath((prev) => (data[prev] !== undefined ? prev : Object.keys(data)[0] ?? ''));
       } else {
         const errMsg = await response.text();
-        setError(errMsg || 'Failed to render preview');
+        setError(errMsg || 'Failed to render project preview');
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       setError('Connection error. Is backend running?');
     } finally {
       setIsLoading(false);
     }
-  }, [entityName, getDiagramSchema, activeTab, projectFiles]);
+  }, [getDiagramSchema, nodes.length]);
 
-  // Feature 8: Fetch Project-Wide Files (__PROJECT__)
-  const fetchProjectFiles = useCallback(async () => {
-    try {
-      const schema = getDiagramSchema();
-      const response = await fetch(`http://localhost:8080/api/scaffold/preview?entityName=__PROJECT__`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(schema),
-      });
-
-      if (response.ok) {
-        const pFiles = await response.json();
-        setProjectFiles(pFiles);
-      }
-    } catch (err) {
-      console.error('Project files preview error:', err);
-    }
-  }, [getDiagramSchema]);
-
-  // Feature 6: Fetch Compare Framework Preview
+  // Fetch Compare Framework Preview
   const fetchComparePreview = useCallback(async () => {
-    if (!compareMode || !compareFramework) return;
+    if (!compareMode || !compareFramework || nodes.length === 0) return;
     setIsCompareFetching(true);
     try {
       const schema = getDiagramSchema();
       const schemaOverride = { ...schema, targetFramework: compareFramework };
-      const response = await fetch(`http://localhost:8080/api/scaffold/preview?entityName=${entityName}`, {
+      const response = await fetch('http://localhost:8080/api/scaffold/preview/all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(schemaOverride),
       });
 
       if (response.ok) {
-        const cMap = await response.json();
-        setCompareFiles(cMap);
+        const cData = await response.json();
+        setCompareFiles(cData);
       }
     } catch (err) {
       console.error('Compare framework fetch error:', err);
     } finally {
       setIsCompareFetching(false);
     }
-  }, [compareMode, compareFramework, entityName, getDiagramSchema]);
+  }, [compareMode, compareFramework, nodes.length, getDiagramSchema]);
 
+  // Trigger preview fetch on diagram change
   useEffect(() => {
-    setIsLoading(true);
-    const delayDebounceFn = setTimeout(() => {
-      fetchPreview();
-      fetchProjectFiles();
-    }, 450);
-    return () => clearTimeout(delayDebounceFn);
-  }, [
-    entityName,
-    nodes,
-    edges,
-    projectName,
-    basePackage,
-    openApiSupport,
-    generateTestStubs,
-    flywayMigration,
-    targetFramework,
-    fetchPreview,
-    fetchProjectFiles,
-  ]);
+    const timer = setTimeout(fetchAllFiles, 450);
+    return () => clearTimeout(timer);
+  }, [nodes, edges, projectName, basePackage, targetFramework, enabledFeatures, fetchAllFiles]);
 
   useEffect(() => {
     if (compareMode) {
@@ -394,7 +466,58 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }
   }, [compareMode, compareFramework, fetchComparePreview]);
 
-  // Feature 1: Debounced Search Computation
+  // When an entity is selected on canvas: DEFAULT TO ENTITY VIEW TAB automatically!
+  useEffect(() => {
+    if (!selectedEntityName || Object.keys(allFiles).length === 0) return;
+
+    // Automatically switch to the Entity View tab when an entity is selected
+    setActiveExplorerTab('entity');
+
+    const firstEntityFile = Object.keys(allFiles).find((p) =>
+      (p.split('/').pop() ?? '').startsWith(selectedEntityName)
+    );
+
+    if (firstEntityFile) {
+      setActiveFilePath(firstEntityFile);
+      setIsMinimized(false);
+      setTimeout(() => {
+        const el = document.querySelector(`[data-filepath="${CSS.escape(firstEntityFile)}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  }, [selectedEntityName, allFiles]);
+
+  // Directory Tree Structure for 'all' tab
+  const fileTree = useMemo(() => {
+    const paths = Object.keys(allFiles).map((p) => ({ path: p, tabKey: p }));
+    return buildFileTree(paths);
+  }, [allFiles]);
+
+  // Grouped Entity Files for 'entity' tab
+  const entityFilesGrouped = useMemo(() => {
+    if (!selectedEntityName) return [];
+
+    const map = new Map<string, { path: string; name: string; category: string }[]>();
+    for (const cat of CATEGORY_ORDER) {
+      map.set(cat, []);
+    }
+
+    for (const filePath of Object.keys(allFiles)) {
+      if (filesBelongsToEntity(filePath, selectedEntityName)) {
+        const cat = getCategoryFromPath(filePath);
+        const name = filePath.split('/').pop() ?? filePath;
+        if (!map.has(cat)) map.set(cat, []);
+        map.get(cat)!.push({ path: filePath, name, category: cat });
+      }
+    }
+
+    return CATEGORY_ORDER.map((cat) => ({
+      category: cat,
+      files: map.get(cat) || [],
+    })).filter((group) => group.files.length > 0);
+  }, [allFiles, selectedEntityName]);
+
+  // Feature 1: Debounced Search Computation across allFiles
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -405,9 +528,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       const queryLower = searchQuery.toLowerCase();
       const results: SearchResult[] = [];
 
-      for (const [tabKey, content] of Object.entries(allFiles)) {
+      for (const [filePath, content] of Object.entries(allFiles)) {
         if (!content) continue;
-        const fileName = getFilePathForTab(tabKey).split('/').pop() || tabKey;
+        const fileName = filePath.split('/').pop() || filePath;
         const lines = content.split('\n');
 
         for (let i = 0; i < lines.length; i++) {
@@ -417,7 +540,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
             const trimmedLine = line.trim();
             const trimmedMatchIdx = trimmedLine.toLowerCase().indexOf(queryLower);
             results.push({
-              tabKey,
+              filePath,
               fileName,
               lineNumber: i + 1,
               lineContent: trimmedLine.length > 60 ? trimmedLine.substring(0, 60) + '...' : trimmedLine,
@@ -433,7 +556,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, allFiles, getFilePathForTab]);
+  }, [searchQuery, allFiles]);
 
   // Feature 4: Variable Scanner
   useEffect(() => {
@@ -449,14 +572,12 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       }
     };
 
-    // Regex for {{VAR}} and ${VAR}
     const templateMatches = combinedContent.match(/\{\{([A-Z0-9_]+)\}\}|\$\{([A-Z0-9_]+)\}/g) || [];
     for (const match of templateMatches) {
       const cleanName = match.replace(/[\{\}\$\s]/g, '');
       addVar(match, `Template Var (${cleanName})`, match);
     }
 
-    // Common placeholders
     if (combinedContent.includes('localhost')) addVar('localhost', 'Host', 'localhost');
     if (combinedContent.includes('5432')) addVar('5432', 'PostgreSQL Port', '5432');
     if (combinedContent.includes('3306')) addVar('3306', 'MySQL Port', '3306');
@@ -471,12 +592,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
 
   // Feature 4: Variable Replacement
   const handleVariableChange = (oldValue: string, newValue: string) => {
-    setFiles((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([key, content]) => [key, content.replaceAll(oldValue, newValue)])
-      )
-    );
-    setProjectFiles((prev) =>
+    setAllFiles((prev) =>
       Object.fromEntries(
         Object.entries(prev).map(([key, content]) => [key, content.replaceAll(oldValue, newValue)])
       )
@@ -488,9 +604,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
 
   // Feature 3: Download Single File
   const handleDownloadFile = useCallback(() => {
-    const content = allFiles[activeTab] || '';
-    const activeFilePath = getFilePathForTab(activeTab);
-    const filename = activeFilePath.split('/').pop() || activeTab;
+    if (!activeFilePath) return;
+    const content = allFiles[activeFilePath] || '';
+    const filename = activeFilePath.split('/').pop() || 'file';
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -501,7 +617,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     a.remove();
     URL.revokeObjectURL(url);
     showToast(`Downloaded ${filename}`, 'success');
-  }, [allFiles, activeTab, getFilePathForTab, showToast]);
+  }, [allFiles, activeFilePath, showToast]);
 
   // Feature 3: Download All as ZIP
   const handleDownloadZip = async () => {
@@ -510,8 +626,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
-      for (const [tabKey, content] of Object.entries(allFiles)) {
-        const filePath = getFilePathForTab(tabKey);
+      for (const [filePath, content] of Object.entries(allFiles)) {
         zip.file(filePath, content);
       }
 
@@ -524,7 +639,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      showToast('Downloaded all preview files as ZIP', 'success');
+      showToast('Downloaded full project as ZIP archive', 'success');
     } catch (err) {
       console.error(err);
       showToast('Failed to generate ZIP archive', 'error');
@@ -533,9 +648,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }
   };
 
-  // Feature 1: Search result click
-  const handleSearchResultClick = (tabKey: string, lineNumber: number) => {
-    setActiveTab(tabKey);
+  // Feature 1: Search Result Click
+  const handleSearchResultClick = (filePath: string, lineNumber: number) => {
+    setActiveFilePath(filePath);
     setTimeout(() => {
       if (editorRef.current) {
         editorRef.current.revealLineInCenter(lineNumber);
@@ -545,7 +660,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }, 50);
   };
 
-  // Feature 5: Warning click navigation
+  // Feature 5: Warning Click Navigation
   const handleWarningClick = (targetName: string) => {
     useDiagramStore.getState().onNodesChange(
       useDiagramStore.getState().nodes.map((n) => ({
@@ -598,7 +713,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isDiffMode, compareMode, isSearchOpen, searchQuery, allFiles, handleDownloadFile]);
 
-  // Resizing handlers
+  // Resizing Handlers
   useEffect(() => {
     if (!isResizingV) return;
     const handleMouseMove = (e: MouseEvent) => {
@@ -633,7 +748,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
   }, [isResizingH]);
 
   const handleCopy = async () => {
-    const code = allFiles[activeTab] || '';
+    const code = allFiles[activeFilePath] || '';
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
@@ -643,60 +758,17 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
     }
   };
 
-  const getEditorLanguage = (tabName: string = activeTab, framework: string = targetFramework) => {
-    if (tabName === 'Dockerfile') return 'dockerfile';
-    if (tabName === 'docker-compose') return 'yaml';
-    if (tabName === 'GitHub CI') return 'yaml';
-    if (tabName === '.env.example') return 'plaintext';
-    if (tabName === 'Flyway SQL' || tabName.endsWith('.sql')) return 'sql';
-    if (tabName === 'Prisma Schema') return 'prisma';
-    if (framework === 'EXPRESS' || framework === 'NESTJS') return 'typescript';
-    if (framework === 'FASTAPI' || framework === 'DJANGO_REST') return 'python';
-    if (framework === 'LARAVEL') return 'php';
-    if (framework === 'GIN') return 'go';
-    if (framework === 'RAILS') return 'ruby';
-    return 'java';
-  };
-
-  const activeFilePath = getFilePathForTab(activeTab);
-  const activeFileName = activeFilePath.split('/').pop() || activeTab;
-  const activeCode = allFiles[activeTab] || '';
+  const activeFileName = activeFilePath.split('/').pop() || activeFilePath;
+  const activeCode = allFiles[activeFilePath] || '';
+  const frameworkColor = FRAMEWORK_COLORS[targetFramework] || '#38bdf8';
   const badgeClass = BADGE_STYLES[targetFramework.toLowerCase()] || 'text-muted bg-surface-2';
+  const frameworkLabel = FRAMEWORK_OPTIONS.find((f) => f.id === targetFramework)?.label || targetFramework;
+  const totalFileCount = Object.keys(allFiles).length;
 
-  const frameworkLabel =
-    FRAMEWORK_OPTIONS.find((f) => f.id === targetFramework)?.label || targetFramework;
-
-  // Feature 7: Group files by Category
-  const categorizedSections = useMemo(() => {
-    const sectionsMap: Record<string, { label: string; icon: string; items: { tabKey: string; name: string; path: string }[] }> = {};
-
-    const allKeys = Object.keys(allFiles);
-    for (const key of allKeys) {
-      const isProj = Boolean(projectFiles[key]);
-      const catLabel = getCategoryForTabKey(key, isProj);
-      const catObj = CATEGORY_MAP.find((c) => c.label === catLabel) || {
-        id: 'Proj',
-        label: 'Project Configuration',
-        icon: '📁',
-      };
-
-      if (!sectionsMap[catLabel]) {
-        sectionsMap[catLabel] = {
-          label: catLabel,
-          icon: catObj.icon,
-          items: [],
-        };
-      }
-
-      const filePath = getFilePathForTab(key);
-      const name = filePath.split('/').pop() || key;
-      sectionsMap[catLabel].items.push({ tabKey: key, name, path: filePath });
-    }
-
-    return sectionsMap;
-  }, [allFiles, projectFiles, getFilePathForTab]);
-
-  const nodeErrors = validationErrors.filter((e) => e.target === entityName);
+  const activeBasename = activeFilePath.split('/').pop() ?? '';
+  const nodeErrors = validationErrors.filter((e) =>
+    selectedEntityName ? e.target === selectedEntityName : activeBasename.startsWith(e.target)
+  );
 
   return (
     <div
@@ -717,7 +789,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
         />
       )}
 
-      {/* Feature 9: Redesigned Title Bar & IDE Toolbar */}
+      {/* Title Bar & IDE Toolbar */}
       <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3 bg-surface">
         {/* Left Group */}
         <div className="flex items-center gap-2">
@@ -730,13 +802,23 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
           </button>
           <Terminal size={13} className="text-muted" />
           <span className="text-[0.78rem] text-muted">
-            Preview — <strong className="font-semibold text-content">{entityName}</strong>
+            Preview — <strong className="font-semibold text-content">{projectName || 'Project'}</strong>
           </span>
-          <span
-            className={`rounded px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${badgeClass}`}
-          >
+          <span className={`rounded px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${badgeClass}`}>
             {frameworkLabel}
           </span>
+          <span className="text-[0.68rem] text-subtle font-mono">{totalFileCount} files</span>
+          {selectedEntityName && (
+            <span
+              className="rounded px-1.5 py-0.5 text-[0.65rem] font-semibold transition-colors"
+              style={{
+                color: frameworkColor,
+                backgroundColor: `color-mix(in srgb, ${frameworkColor} 14%, transparent)`,
+              }}
+            >
+              ● {selectedEntityName}
+            </span>
+          )}
           {compareMode && (
             <span className="text-[0.68rem] font-medium text-subtle">
               vs{' '}
@@ -762,7 +844,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
               setIsSearchOpen((prev) => !prev);
               if (!isSearchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
             }}
-            title="Search files across generated code (Ctrl+F)"
+            title="Search files across generated codebase (Ctrl+F)"
           >
             <Search size={13} />
           </button>
@@ -829,7 +911,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
             className="flex h-7 w-7 items-center justify-center rounded-md text-subtle transition-colors hover:bg-surface-2 hover:text-content"
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
-            title="Download All Files as ZIP"
+            title="Download Full Project as ZIP"
           >
             {isDownloadingZip ? <RefreshCw size={13} className="animate-spin" /> : <FileArchive size={13} />}
           </button>
@@ -865,10 +947,10 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
               <div className="text-sm font-semibold text-content">Scaffolding Error</div>
               <pre className="max-w-[80%] whitespace-pre-wrap text-center text-xs opacity-70">{error}</pre>
             </div>
-          ) : Object.keys(allFiles).length === 0 ? (
+          ) : totalFileCount === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2.5 text-sm text-muted">
               <RefreshCw size={22} className="animate-spin opacity-50" />
-              <span>Loading scaffold preview...</span>
+              <span>Add entities to the canvas to view full project tree preview...</span>
             </div>
           ) : (
             <>
@@ -877,7 +959,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                 className="scroll-thin flex h-full shrink-0 flex-col border-r border-border bg-surface-2"
                 style={{ width: `${treePanelWidth}px`, minWidth: 150, maxWidth: 400 }}
               >
-                {/* Feature 1: Search Input */}
+                {/* Search Input */}
                 {(isSearchOpen || searchQuery) && (
                   <div className="shrink-0 border-b border-border p-2">
                     <div className="relative flex items-center">
@@ -907,44 +989,63 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                   </div>
                 )}
 
-                {/* Feature 7: Category Filter Pills */}
+                {/* Explorer View Tabs: 'All Files' (Full Directory Tree) vs Entity Specific View */}
                 {!searchQuery && (
-                  <div className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border p-1.5 scroll-thin">
-                    {['All', 'App', 'API', 'Logic', 'DTO', 'DB', 'Tests', 'Infra'].map((cat) => (
-                      <button
-                        key={cat}
-                        className={`rounded px-1.5 py-0.5 text-[0.62rem] font-medium transition-colors ${
-                          categoryFilter === cat
-                            ? 'bg-primary/20 text-primary font-semibold'
-                            : 'text-subtle hover:bg-surface-3 hover:text-content'
-                        }`}
-                        onClick={() => setCategoryFilter(cat)}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  <div className="flex shrink-0 items-center gap-1 border-b border-border p-1.5 scroll-thin">
+                    <button
+                      className={`rounded px-2.5 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                        activeExplorerTab === 'all'
+                          ? 'bg-primary/20 text-primary font-semibold'
+                          : 'text-subtle hover:bg-surface-3 hover:text-content'
+                      }`}
+                      onClick={() => setActiveExplorerTab('all')}
+                    >
+                      All Files
+                    </button>
+                    <button
+                      className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                        activeExplorerTab === 'entity'
+                          ? 'bg-primary/20 text-primary font-semibold'
+                          : 'text-subtle hover:bg-surface-3 hover:text-content'
+                      }`}
+                      onClick={() => setActiveExplorerTab('entity')}
+                    >
+                      {selectedEntityName ? (
+                        <>
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ backgroundColor: frameworkColor }}
+                          />
+                          <span>{selectedEntityName}</span>
+                        </>
+                      ) : (
+                        <span>Entity View</span>
+                      )}
+                    </button>
                   </div>
                 )}
 
                 <div className="shrink-0 border-b border-border px-3.5 py-1.5 text-[0.65rem] font-bold tracking-widest text-subtle">
-                  EXPLORER
+                  {activeExplorerTab === 'all'
+                    ? 'EXPLORER'
+                    : selectedEntityName
+                    ? `${selectedEntityName.toUpperCase()} ARCHITECTURE`
+                    : 'ENTITY VIEW'}
                 </div>
 
-                {/* Main Tree / Search Results Area */}
+                {/* Explorer File Content List */}
                 <div className="scroll-thin flex-1 overflow-y-auto overflow-x-hidden py-1">
                   {searchQuery.trim() ? (
                     // Search Results List
                     searchResults.length === 0 ? (
-                      <div className="p-3 text-center text-xs text-subtle">
-                        No results for "{searchQuery}"
-                      </div>
+                      <div className="p-3 text-center text-xs text-subtle">No results for "{searchQuery}"</div>
                     ) : (
                       <div className="flex flex-col gap-0.5 px-1">
                         {searchResults.map((res, idx) => (
                           <div
-                            key={`${res.tabKey}-${res.lineNumber}-${idx}`}
+                            key={`${res.filePath}-${res.lineNumber}-${idx}`}
                             className="group flex cursor-pointer flex-col rounded p-1.5 text-xs transition-colors hover:bg-surface-3"
-                            onClick={() => handleSearchResultClick(res.tabKey, res.lineNumber)}
+                            onClick={() => handleSearchResultClick(res.filePath, res.lineNumber)}
                           >
                             <div className="flex items-center justify-between text-[0.7rem] font-semibold text-content">
                               <span className="truncate">{res.fileName}</span>
@@ -961,75 +1062,25 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                         ))}
                       </div>
                     )
-                  ) : (
-                    // Feature 7 & 8: Smart Categorized Tree View
-                    <div className="flex flex-col gap-1">
-                      {Object.entries(categorizedSections)
-                        .filter(([catLabel]) => {
-                          if (categoryFilter === 'All') return true;
-                          if (categoryFilter === 'App' && catLabel === 'Application Layer') return true;
-                          if (categoryFilter === 'API' && catLabel === 'API Layer') return true;
-                          if (categoryFilter === 'Logic' && catLabel === 'Business Logic') return true;
-                          if (categoryFilter === 'DTO' && catLabel === 'Data Transfer') return true;
-                          if (categoryFilter === 'DB' && catLabel === 'Database') return true;
-                          if (categoryFilter === 'Tests' && catLabel === 'Tests') return true;
-                          if (categoryFilter === 'Infra' && catLabel === 'Infrastructure') return true;
-                          return false;
-                        })
-                        .map(([catLabel, section]) => {
-                          const isCollapsed = collapsedSections.has(catLabel);
-                          return (
-                            <div key={catLabel} className="flex flex-col">
-                              {/* Section Header */}
-                              <div
-                                className="flex h-6 cursor-pointer items-center justify-between border-b border-border/40 px-3 text-[0.7rem] font-bold text-muted transition-colors hover:bg-surface-3"
-                                onClick={() =>
-                                  setCollapsedSections((prev) => {
-                                    const next = new Set(prev);
-                                    if (next.has(catLabel)) next.delete(catLabel);
-                                    else next.add(catLabel);
-                                    return next;
-                                  })
-                                }
-                              >
-                                <span className="flex items-center gap-1.5">
-                                  <span>{section.icon}</span>
-                                  <span>{section.label}</span>
-                                </span>
-                                <ChevronRight
-                                  size={11}
-                                  className={`text-subtle transition-transform ${
-                                    !isCollapsed ? 'rotate-90' : ''
-                                  }`}
-                                />
-                              </div>
+                  ) : activeExplorerTab === 'all' ? (
+                    // Real Full Folder Directory Tree View
+                    <div className="flex flex-col gap-0.5">
+                      {fileTree.map((node) => (
+                        <TreeItem
+                          key={node.path}
+                          node={node}
+                          depth={0}
+                          activeFilePath={activeFilePath}
+                          selectedEntityName={selectedEntityName}
+                          frameworkColor={frameworkColor}
+                          onSelect={setActiveFilePath}
+                          defaultExpanded={true}
+                        />
+                      ))}
 
-                              {/* Section Items */}
-                              {!isCollapsed && (
-                                <div className="flex flex-col py-0.5">
-                                  {section.items.map((item) => (
-                                    <div
-                                      key={item.tabKey}
-                                      className={`flex h-6 cursor-pointer items-center gap-1.5 whitespace-nowrap pl-6 pr-2 text-[0.73rem] transition-colors ${
-                                        activeTab === item.tabKey
-                                          ? 'bg-surface-3 text-content font-medium'
-                                          : 'text-muted hover:bg-surface-2'
-                                      }`}
-                                      onClick={() => setActiveTab(item.tabKey)}
-                                    >
-                                      {getFileIcon(item.name)}
-                                      <span className="truncate">{item.name}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-
-                      {/* Feature 5: Diagram Warnings Section */}
+                      {/* Diagram Warnings Section */}
                       {validationErrors.length > 0 && (
-                        <div className="mt-2 flex flex-col border-t border-amber-500/20 pt-2">
+                        <div className="mt-3 flex flex-col border-t border-amber-500/20 pt-2">
                           <div className="flex items-center gap-1 px-3 text-[0.68rem] font-bold text-amber-500">
                             <AlertTriangle size={11} />
                             <span>Diagram Warnings ({validationErrors.length})</span>
@@ -1048,6 +1099,56 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                             ))}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Categorized Entity View (Grouped by Application Layer, API, Business Logic, DTOs, Tests, etc.)
+                    <div className="flex flex-col gap-2.5 px-1 py-1 scroll-thin">
+                      {!selectedEntityName ? (
+                        <div className="p-4 text-center text-xs text-subtle">
+                          Select an entity on the canvas to view its architecture files
+                        </div>
+                      ) : entityFilesGrouped.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-subtle">
+                          No generated files found for entity "{selectedEntityName}"
+                        </div>
+                      ) : (
+                        entityFilesGrouped.map((group) => (
+                          <div key={group.category} className="flex flex-col gap-0.5">
+                            {/* Category Group Header */}
+                            <div className="flex items-center justify-between border-b border-border/60 bg-surface-2/60 px-2 py-1 text-[0.68rem] font-bold text-muted rounded-t">
+                              <span>{group.category}</span>
+                              <span className="font-mono text-[0.6rem] text-subtle">{group.files.length}</span>
+                            </div>
+
+                            {/* Entity Files under Category */}
+                            <div className="flex flex-col gap-0.5 pt-0.5">
+                              {group.files.map((file) => {
+                                const isActive = file.path === activeFilePath;
+                                return (
+                                  <div
+                                    key={file.path}
+                                    data-filepath={file.path}
+                                    className={`group flex cursor-pointer items-center justify-between rounded px-2 py-1.5 text-xs transition-colors ${
+                                      isActive
+                                        ? 'bg-surface-3 font-semibold text-content'
+                                        : 'text-muted hover:bg-surface-2 hover:text-content'
+                                    }`}
+                                    style={{
+                                      borderLeft: `3px solid ${frameworkColor}`,
+                                    }}
+                                    onClick={() => setActiveFilePath(file.path)}
+                                  >
+                                    <div className="flex items-center gap-1.5 truncate">
+                                      {getFileIcon(file.name)}
+                                      <span className="truncate font-medium text-[0.74rem]">{file.name}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))
                       )}
                     </div>
                   )}
@@ -1122,7 +1223,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                   ))}
                 </div>
 
-                {/* Feature 5: Yellow Warning Banner if entity has validation errors */}
+                {/* Warning Banner */}
                 {nodeErrors.length > 0 && (
                   <div className="flex shrink-0 items-center gap-2 border-b border-amber-500/20 bg-amber-500/8 px-4 py-1.5 text-xs text-amber-400">
                     <AlertTriangle size={12} className="shrink-0" />
@@ -1133,7 +1234,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                   </div>
                 )}
 
-                {/* Feature 2: Diff Snapshot Banner */}
+                {/* Diff Snapshot Banner */}
                 {isDiffMode && (
                   <div className="flex shrink-0 items-center justify-between border-b border-primary/20 bg-primary/10 px-4 py-1.5 text-xs text-primary">
                     <div className="flex items-center gap-2">
@@ -1149,7 +1250,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                   </div>
                 )}
 
-                {/* Feature 6: Compare Mode Framework Selector Header */}
+                {/* Compare Mode Framework Selector Header */}
                 {compareMode && (
                   <div className="flex shrink-0 items-center justify-between border-b border-border bg-surface-3 px-3 py-1 text-xs">
                     <div className="flex items-center gap-2">
@@ -1179,12 +1280,12 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                 {/* Monaco Editor Container */}
                 <div className="relative flex min-h-0 flex-1 flex-row">
                   {isDiffMode ? (
-                    // Feature 2: Monaco Diff Editor
+                    // Monaco Diff Editor
                     <DiffEditor
                       height="100%"
-                      original={diffOriginal[activeTab] || '// No previous snapshot'}
-                      modified={allFiles[activeTab] || ''}
-                      language={getEditorLanguage()}
+                      original={diffOriginal[activeFilePath] || '// No previous snapshot'}
+                      modified={activeCode}
+                      language={getLanguageFromPath(activeFilePath)}
                       theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                       options={{
                         readOnly: true,
@@ -1199,17 +1300,17 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                       }}
                     />
                   ) : compareMode ? (
-                    // Feature 6: Split Editors for Framework Comparison
+                    // Split Editors for Framework Comparison
                     <div className="flex h-full w-full flex-row">
                       {/* Primary Framework Editor */}
                       <div className="flex h-full flex-1 flex-col border-r border-border">
-                        <div className="bg-surface-2 px-3 py-1 text-[0.65rem] font-bold text-subtle border-b border-border">
+                        <div className="bg-surface-2 px-3 py-1 text-[0.65rem] font-bold text-subtle border-b border-border truncate">
                           {frameworkLabel} — {activeFileName}
                         </div>
                         <div className="relative flex-1">
                           <Editor
                             height="100%"
-                            language={getEditorLanguage(activeTab, targetFramework)}
+                            language={getLanguageFromPath(activeFilePath)}
                             theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                             value={activeCode}
                             options={{
@@ -1224,20 +1325,17 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
 
                       {/* Secondary Framework Editor */}
                       <div className="flex h-full flex-1 flex-col">
-                        <div className="bg-surface-2 px-3 py-1 text-[0.65rem] font-bold text-subtle border-b border-border">
+                        <div className="bg-surface-2 px-3 py-1 text-[0.65rem] font-bold text-subtle border-b border-border truncate">
                           {FRAMEWORK_OPTIONS.find((f) => f.id === compareFramework)?.label} —{' '}
-                          {getEquivalentTabKey(activeTab, compareFramework, compareFiles)}
+                          {getEquivalentFilePath(activeFilePath, compareFiles).split('/').pop() || 'File'}
                         </div>
                         <div className="relative flex-1">
                           <Editor
                             height="100%"
-                            language={getEditorLanguage(
-                              getEquivalentTabKey(activeTab, compareFramework, compareFiles),
-                              compareFramework
-                            )}
+                            language={getLanguageFromPath(getEquivalentFilePath(activeFilePath, compareFiles))}
                             theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                             value={
-                              compareFiles[getEquivalentTabKey(activeTab, compareFramework, compareFiles)] ||
+                              compareFiles[getEquivalentFilePath(activeFilePath, compareFiles)] ||
                               '// No equivalent file in target framework'
                             }
                             options={{
@@ -1254,7 +1352,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                     // Standard Single Monaco Editor
                     <Editor
                       height="100%"
-                      language={getEditorLanguage()}
+                      language={getLanguageFromPath(activeFilePath)}
                       theme={theme === 'dark' ? 'vs-dark' : 'vs'}
                       value={activeCode}
                       onMount={(editor) => {
@@ -1294,7 +1392,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                 </div>
               </div>
 
-              {/* Feature 4: Sliding Variables Panel */}
+              {/* Sliding Variables Panel */}
               {isVariablesOpen && (
                 <div className="scroll-thin flex h-full w-[220px] shrink-0 flex-col border-l border-border bg-surface-2 p-3">
                   <div className="flex items-center justify-between border-b border-border pb-2">
@@ -1328,8 +1426,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ entityName
                   <button
                     className="mt-2 w-full rounded border border-border bg-surface py-1.5 text-xs font-medium text-subtle transition-colors hover:bg-surface-3 hover:text-content"
                     onClick={() => {
-                      fetchPreview();
-                      fetchProjectFiles();
+                      fetchAllFiles();
                       showToast('Reset variables to backend generated content', 'info');
                     }}
                   >

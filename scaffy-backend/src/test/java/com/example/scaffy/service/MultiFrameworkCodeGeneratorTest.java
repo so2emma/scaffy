@@ -177,4 +177,38 @@ public class MultiFrameworkCodeGeneratorTest {
             }
         }
     }
+
+    @Test
+    public void testGenerateFullPreviewForAllFrameworks() throws Exception {
+        DiagramDto diagram = createSampleDiagram();
+
+        for (CodeGenerator generator : generators) {
+            diagram.setTargetFramework(generator.getFrameworkId());
+            System.out.println("Testing generateFullPreview for: " + generator.getDisplayName());
+
+            Map<String, String> fullPreview = generator.generateFullPreview(diagram);
+            assertNotNull(fullPreview, "Full preview should not be null for " + generator.getFrameworkId());
+            assertFalse(fullPreview.isEmpty(), "Full preview should not be empty for " + generator.getFrameworkId());
+
+            String expectedPrefix = "test_project/";
+            for (String filePath : fullPreview.keySet()) {
+                assertTrue(filePath.startsWith(expectedPrefix),
+                        "File path " + filePath + " should start with " + expectedPrefix + " for " + generator.getFrameworkId());
+                assertNotNull(fullPreview.get(filePath), "Content for " + filePath + " should not be null");
+            }
+
+            // Verify fullPreview file paths match ZIP entry paths exactly
+            byte[] zipBytes = generator.generateZip(diagram);
+            Set<String> zipEntryNames = new HashSet<>();
+            try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    zipEntryNames.add(entry.getName());
+                }
+            }
+
+            assertEquals(zipEntryNames, fullPreview.keySet(),
+                    "Full preview keys should match zip entry paths for " + generator.getFrameworkId());
+        }
+    }
 }

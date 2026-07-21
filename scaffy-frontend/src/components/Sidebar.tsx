@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDiagramStore } from '../store/useDiagramStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { FRAMEWORK_FEATURES } from '../constants/frameworkFeatures';
 import { AVAILABLE_FRAMEWORKS, FrameworkSelectorModal } from './FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
-import { Plus, Download, Upload, FileDown, Database, ChevronRight, LayoutTemplate } from 'lucide-react';
+import { Plus, Download, Upload, FileDown, Database, ChevronRight, LayoutTemplate, Save, Cloud } from 'lucide-react';
+import { timeAgo } from './ProjectsPanel';
 
 interface SidebarProps {
   onGenerate: () => void;
   isGenerating: boolean;
   onOpenTemplates: () => void;
+  onOpenProjects?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOpenTemplates }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  onGenerate,
+  isGenerating,
+  onOpenTemplates,
+  onOpenProjects,
+}) => {
   const projectName = useDiagramStore((state) => state.projectName);
   const setProjectName = useDiagramStore((state) => state.setProjectName);
 
@@ -28,31 +36,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
   const edges = useDiagramStore((state) => state.edges);
   const validationErrors = useDiagramStore((state) => state.validationErrors);
 
+  const { user, currentProjectId, isCloudSaved, lastCloudSaveTime, setIsCloudSaved } = useAuthStore();
   const { showToast } = useToast();
 
   const [isFrameworkModalOpen, setIsFrameworkModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved'>('saved');
   const [shaking, setShaking] = useState(false);
+  const [isManualSaving, setIsManualSaving] = useState(false);
 
   const errorCount = validationErrors.length;
-  const healthPct = Math.max(0, 100 - errorCount * 15); // 0 errors = 100%, 7+ errors = 0%
+  const healthPct = Math.max(0, 100 - errorCount * 15);
   const healthColor = errorCount === 0 ? 'var(--c-primary)' : errorCount <= 2 ? '#f59e0b' : '#ef4444';
   const healthLabel = errorCount === 0 ? '✓ No issues' : errorCount === 1 ? '⚠ 1 issue' : `✗ ${errorCount} issues`;
 
-  const handleGenerateClick = () => {
-    if (validationErrors.length > 0) {
-      setShaking(true);
-      setTimeout(() => setShaking(false), 500);
-      return;
-    }
-    onGenerate();
-  };
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const frameworkFeatures = FRAMEWORK_FEATURES[targetFramework] || [];
   const currentFramework = AVAILABLE_FRAMEWORKS.find((fw) => fw.id === targetFramework);
 
+  // Local Storage Auto-save
   const performAutoSave = useCallback(() => {
     const storeState = useDiagramStore.getState();
     const dataToSave = {
@@ -79,6 +82,74 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [nodes, edges, projectName, basePackage, targetFramework, enabledFeatures, performAutoSave]);
+
+  // Cloud Auto-save to backend
+  useEffect(() => {
+    if (!user || !currentProjectId) return;
+    setIsCloudSaved(false);
+    const timer = setTimeout(async () => {
+      try {
+        const schema = useDiagramStore.getState().getDiagramSchema();
+        await fetch(`http://localhost:8080/api/projects/${currentProjectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            diagramJson: JSON.stringify(schema),
+            targetFramework: schema.targetFramework,
+            entityCount: schema.entities?.length ?? 0,
+            versionNote: 'Auto-save',
+          }),
+        });
+        setIsCloudSaved(true);
+      } catch (err) {
+        console.error('Cloud auto-save failed:', err);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [nodes, edges, projectName, targetFramework, user, currentProjectId, setIsCloudSaved]);
+
+  const handleCloudSaveClick = async () => {
+    if (!user) return;
+    if (currentProjectId) {
+      setIsManualSaving(true);
+      try {
+        const schema = useDiagramStore.getState().getDiagramSchema();
+        const res = await fetch(`http://localhost:8080/api/projects/${currentProjectId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            diagramJson: JSON.stringify(schema),
+            targetFramework: schema.targetFramework,
+            entityCount: schema.entities?.length ?? 0,
+            versionNote: 'Manual Save',
+          }),
+        });
+        if (res.ok) {
+          setIsCloudSaved(true);
+          showToast('Project saved to cloud', 'success');
+        } else {
+          showToast('Failed to save project to cloud', 'error');
+        }
+      } catch (e) {
+        showToast('Error saving project: ' + e, 'error');
+      } finally {
+        setIsManualSaving(false);
+      }
+    } else if (onOpenProjects) {
+      onOpenProjects();
+    }
+  };
+
+  const handleGenerateClick = () => {
+    if (validationErrors.length > 0) {
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
+      return;
+    }
+    onGenerate();
+  };
 
   const handleExport = () => {
     try {
@@ -256,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
       {/* Entities list */}
       <section className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="section-label">Entities ({nodes.length})</label>
-        
+
         <div style={{ marginTop: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: 4 }}>
             <span style={{ color: healthColor, fontWeight: 600 }}>{healthLabel}</span>
@@ -294,16 +365,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ onGenerate, isGenerating, onOp
         </div>
       </section>
 
-      {/* Auto-save + generate */}
+      {/* Cloud Save & Generate */}
       <section className="mt-auto border-t border-border pt-3">
-        <div
-          className={`mb-2.5 flex items-center gap-1.5 text-xs font-medium ${
-            saveStatus === 'saved' ? 'text-primary' : 'text-amber-500'
-          }`}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          <span>{saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}</span>
-        </div>
+        {user && (
+          <div className="mb-3 flex flex-col gap-1.5">
+            <button
+              onClick={handleCloudSaveClick}
+              disabled={isManualSaving}
+              className="btn btn-secondary w-full justify-center !py-2 !text-xs font-semibold"
+            >
+              {currentProjectId ? (
+                <>
+                  <Save size={14} className="text-primary" />
+                  <span>{isManualSaving ? 'Saving...' : '💾 Save'}</span>
+                </>
+              ) : (
+                <>
+                  <Cloud size={14} className="text-primary" />
+                  <span>☁ Save to Cloud</span>
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center justify-center">
+              {currentProjectId ? (
+                isCloudSaved ? (
+                  <span className="text-[0.7rem] font-medium text-green-400">
+                    ☁ Saved{lastCloudSaveTime ? ` · ${timeAgo(lastCloudSaveTime)}` : ''}
+                  </span>
+                ) : (
+                  <span className="animate-pulse text-[0.7rem] font-medium text-amber-400">
+                    ☁ Unsaved changes
+                  </span>
+                )
+              ) : (
+                <span className="text-[0.7rem] text-subtle">☁ Not saved to cloud</span>
+              )}
+            </div>
+          </div>
+        )}
 
         <button
           className={`btn btn-primary w-full py-3 ${shaking ? 'animate-shake' : ''}`}

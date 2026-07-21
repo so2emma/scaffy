@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: scaffy_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scaffy_db
+      POSTGRES_USER: scaffy
+      POSTGRES_PASSWORD: scaffy_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - scaffy_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scaffy -d scaffy_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./scaffy-backend
+      dockerfile: Dockerfile
+    container_name: scaffy_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/scaffy_db
+      SPRING_DATASOURCE_USERNAME: scaffy
+      SPRING_DATASOURCE_PASSWORD: scaffy_secret
+      SCAFFY_JWT_SECRET: change-this-to-a-random-256-bit-secret-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./scaffy-frontend
+      dockerfile: Dockerfile
+    container_name: scaffy_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  scaffy_pg_data:

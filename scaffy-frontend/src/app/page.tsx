@@ -3,17 +3,22 @@
 import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDiagramStore } from '../store/useDiagramStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { Sidebar } from '../components/Sidebar';
 import { Canvas } from '../components/Canvas';
 import { ReactFlowProvider } from '@xyflow/react';
 import { ImportModal } from '../components/ImportModal';
 import { RelationshipPanel } from '../components/RelationshipPanel';
-import { ValidationErrors, ValidationError } from '../components/ValidationErrors';
+import { ValidationErrors } from '../components/ValidationErrors';
 import { CodePreviewDrawer } from '../components/CodePreviewDrawer';
 import { TemplateGalleryModal } from '../components/TemplateGalleryModal';
+import { AuthModal } from '../components/AuthModal';
+import { UserMenu } from '../components/UserMenu';
+import { ProjectsPanel } from '../components/ProjectsPanel';
+import { UserTemplatesPanel } from '../components/UserTemplatesPanel';
 import { AVAILABLE_FRAMEWORKS } from '../components/FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
-import { Database, Sun, Moon } from 'lucide-react';
+import { Database, Sun, Moon, LogIn, Loader2 } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +42,7 @@ function ScaffyAppContent() {
   const basePackage = useDiagramStore((state) => state.basePackage);
   const targetFramework = useDiagramStore((state) => state.targetFramework);
 
+  const { user, isLoading: authLoading } = useAuthStore();
   const { showToast } = useToast();
 
   const validationErrors = useDiagramStore((state) => state.validationErrors);
@@ -44,6 +50,15 @@ function ScaffyAppContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
+
+  // Auth & Cloud Panels state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
+  const [isUserTemplatesPanelOpen, setIsUserTemplatesPanelOpen] = useState(false);
+
+  useEffect(() => {
+    useAuthStore.getState().checkAuth();
+  }, []);
 
   const selectedNode = nodes.find((n) => n.selected);
   const selectedEntityName = selectedNode ? selectedNode.data.name : null;
@@ -153,6 +168,7 @@ function ScaffyAppContent() {
             Design ER diagrams and generate custom production-ready{' '}
             <strong className="font-semibold text-content">{frameworkLabel(targetFramework)}</strong> scaffolding in one click.
           </p>
+
           <button
             onClick={toggleTheme}
             className="btn btn-secondary h-9 w-9 !p-0"
@@ -161,6 +177,26 @@ function ScaffyAppContent() {
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+
+          {/* User Auth Menu or Sign In */}
+          {authLoading ? (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted">
+              <Loader2 size={16} className="animate-spin" />
+            </div>
+          ) : user ? (
+            <UserMenu
+              onOpenProjects={() => setIsProjectsPanelOpen(true)}
+              onOpenTemplates={() => setIsUserTemplatesPanelOpen(true)}
+            />
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="btn btn-primary !py-1.5 !px-3.5 !text-xs font-semibold"
+            >
+              <LogIn size={14} />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -170,6 +206,7 @@ function ScaffyAppContent() {
           onGenerate={handleGenerate}
           isGenerating={isGenerating}
           onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
+          onOpenProjects={() => setIsProjectsPanelOpen(true)}
         />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -186,6 +223,21 @@ function ScaffyAppContent() {
         <TemplateGalleryModal
           isOpen={isTemplateGalleryOpen}
           onClose={() => setIsTemplateGalleryOpen(false)}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+
+        <ProjectsPanel
+          isOpen={isProjectsPanelOpen}
+          onClose={() => setIsProjectsPanelOpen(false)}
+        />
+
+        <UserTemplatesPanel
+          isOpen={isUserTemplatesPanelOpen}
+          onClose={() => setIsUserTemplatesPanelOpen(false)}
         />
 
         <RelationshipPanel />

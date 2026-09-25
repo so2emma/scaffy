@@ -33,13 +33,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // All existing scaffold endpoints remain PUBLIC (guest mode preserved)
+                // All scaffold endpoints (generate, validate, preview, etc.) remain PUBLIC (guest access allowed)
                 .requestMatchers("/api/scaffold/**").permitAll()
                 // Auth endpoints
-                .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                 // Community templates (read-only, public)
                 .requestMatchers(HttpMethod.GET, "/api/user-templates/community").permitAll()
-                // Everything else requires authentication
+                // Everything else (saving projects, version history, personal templates) requires authentication
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

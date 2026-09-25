@@ -623,6 +623,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
     if (!activeFilePath) return;
     const content = allFiles[activeFilePath] || '';
     const filename = activeFilePath.split('/').pop() || 'file';
+
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

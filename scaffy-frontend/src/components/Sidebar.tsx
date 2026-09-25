@@ -367,7 +367,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Cloud Save & Generate */}
       <section className="mt-auto border-t border-border pt-3">
-        {user && (
+        {user ? (
           <div className="mb-3 flex flex-col gap-1.5">
             <button
               onClick={handleCloudSaveClick}
@@ -401,6 +401,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <span className="text-[0.7rem] text-subtle">☁ Not saved to cloud</span>
               )}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-3 flex flex-col gap-1.5">
+            <button
+              onClick={() => {
+                showToast('Please sign in to save your project to the cloud.', 'info');
+                useAuthStore.getState().setIsAuthModalOpen(true);
+              }}
+              className="btn btn-secondary w-full justify-center !py-2 !text-xs font-semibold text-muted hover:text-content"
+              title="Sign in to save project to cloud"
+            >
+              <Cloud size={14} className="text-muted" />
+              <span>☁ Save to Cloud</span>
+            </button>
+            <div className="flex items-center justify-center">
+              <span className="text-[0.7rem] text-muted">☁ Sign in to enable cloud save</span>
             </div>
           </div>
         )}

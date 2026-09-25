@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -18,6 +18,7 @@ import { ProjectsPanel } from '../components/ProjectsPanel';
 import { UserTemplatesPanel } from '../components/UserTemplatesPanel';
 import { AVAILABLE_FRAMEWORKS } from '../components/FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
+import { autoSaveCurrentProjectToCloud } from '../utils/cloudSave';
 import { Database, Sun, Moon, LogIn, Loader2 } from 'lucide-react';
 
 const queryClient = new QueryClient({
@@ -42,7 +43,7 @@ function ScaffyAppContent() {
   const basePackage = useDiagramStore((state) => state.basePackage);
   const targetFramework = useDiagramStore((state) => state.targetFramework);
 
-  const { user, isLoading: authLoading } = useAuthStore();
+  const { user, isLoading: authLoading, currentProjectId, setCurrentProject, setIsCloudSaved, isAuthModalOpen: isAuthModalOpenStore, setIsAuthModalOpen: setIsAuthModalOpenStore } = useAuthStore();
   const { showToast } = useToast();
 
   const validationErrors = useDiagramStore((state) => state.validationErrors);
@@ -98,19 +99,14 @@ function ScaffyAppContent() {
     return false;
   };
 
-  const handleGenerate = async () => {
-    const isValid = await runValidation();
-    if (!isValid && validationErrors.length > 0) {
-      showToast('Cannot generate scaffold. Please fix the validation errors first.', 'warning');
-      return;
-    }
-
+  const executeScaffoldDownload = useCallback(async () => {
     setIsGenerating(true);
     try {
       const schema = getDiagramSchema();
       const response = await fetch('http://localhost:8080/api/scaffold/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(schema),
       });
 
@@ -137,6 +133,20 @@ function ScaffyAppContent() {
     } finally {
       setIsGenerating(false);
     }
+  }, [getDiagramSchema, projectName, showToast]);
+
+  const handleGenerate = async () => {
+    const isValid = await runValidation();
+    if (!isValid && validationErrors.length > 0) {
+      showToast('Cannot generate scaffold. Please fix the validation errors first.', 'warning');
+      return;
+    }
+
+    // Auto-save project state to cloud if user is signed in
+    if (user) {
+      await autoSaveCurrentProjectToCloud();
+    }
+    await executeScaffoldDownload();
   };
 
   return (
@@ -226,8 +236,11 @@ function ScaffyAppContent() {
         />
 
         <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
+          isOpen={isAuthModalOpen || isAuthModalOpenStore}
+          onClose={() => {
+            setIsAuthModalOpen(false);
+            setIsAuthModalOpenStore(false);
+          }}
         />
 
         <ProjectsPanel

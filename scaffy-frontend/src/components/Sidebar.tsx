@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { FRAMEWORK_FEATURES } from '../constants/frameworkFeatures';
 import { AVAILABLE_FRAMEWORKS, FrameworkSelectorModal } from './FrameworkSelectorModal';
 import { useToast } from '../hooks/useToast';
-import { Plus, Download, Upload, FileDown, Database, ChevronRight, LayoutTemplate, Save, Cloud } from 'lucide-react';
+import { Plus, Download, Upload, FileDown, Database, ChevronRight, LayoutTemplate, Save, Cloud, Check, AlertTriangle, X } from 'lucide-react';
 import { timeAgo } from './ProjectsPanel';
 
 interface SidebarProps {
@@ -47,7 +47,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const errorCount = validationErrors.length;
   const healthPct = Math.max(0, 100 - errorCount * 15);
   const healthColor = errorCount === 0 ? 'var(--c-primary)' : errorCount <= 2 ? '#f59e0b' : '#ef4444';
-  const healthLabel = errorCount === 0 ? '✓ No issues' : errorCount === 1 ? '⚠ 1 issue' : `✗ ${errorCount} issues`;
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -201,8 +200,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="scroll-thin flex h-full w-64 shrink-0 flex-col gap-6 overflow-y-auto border-r border-border bg-surface p-5 lg:w-72">
-      <h3 className="font-display text-base font-semibold">Project Config</h3>
+    <aside className="scroll-thin flex h-full w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r border-border bg-surface p-4 lg:w-72">
+      <div className="flex items-center gap-2 px-1">
+        <Database size={20} className="text-accent" />
+        <h3 className="text-lg font-semibold text-content">Project Config</h3>
+      </div>
 
       {/* Basic config */}
       <section className="flex flex-col gap-4">
@@ -235,25 +237,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {currentFramework && (
             <div
-              className="flex items-center gap-2.5 rounded-xl border p-3"
+              className="flex items-center gap-3 rounded-lg border p-3 transition-all hover:shadow-sm"
               style={{
                 borderColor: currentFramework.color,
-                background: `color-mix(in srgb, ${currentFramework.color} 8%, transparent)`,
+                background: `color-mix(in srgb, ${currentFramework.color} 6%, var(--c-surface))`,
               }}
             >
               <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ background: currentFramework.color }}
+                className="h-3 w-3 shrink-0 rounded-full ring-2 ring-offset-2 ring-offset-surface"
+                style={{ 
+                  background: currentFramework.color, 
+                  '--tw-ring-color': currentFramework.color + '30' 
+                } as React.CSSProperties}
               />
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-semibold">{currentFramework.displayName}</span>
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-semibold text-content">{currentFramework.displayName}</span>
                 <span className="truncate text-xs text-muted">{currentFramework.description}</span>
               </div>
               <span
-                className="ml-auto shrink-0 rounded px-1.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+                className="shrink-0 rounded px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide"
                 style={{
                   color: currentFramework.color,
-                  background: `color-mix(in srgb, ${currentFramework.color} 14%, transparent)`,
+                  background: `color-mix(in srgb, ${currentFramework.color} 15%, transparent)`,
                 }}
               >
                 {currentFramework.language}
@@ -266,27 +271,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setIsFrameworkModalOpen(true)}
           >
             <span>Change Framework</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={16} />
           </button>
         </div>
 
         {/* Generator features */}
         <div className="border-t border-border pt-4">
-          <label className="section-label mb-2 block">Generator Features</label>
-          <div className="flex flex-col gap-2.5">
+          <label className="section-label block">Generator Features</label>
+          <div className="flex flex-col gap-2">
             {frameworkFeatures.map((feature) => (
               <label
                 key={feature.id}
-                className="flex cursor-pointer items-start gap-2 text-sm text-content"
+                className="group flex cursor-pointer items-start gap-2.5 rounded-md p-2 text-sm text-content transition-colors hover:bg-surface-hover"
                 title={`Toggle ${feature.label}`}
               >
                 <input
                   type="checkbox"
                   checked={!!enabledFeatures[feature.id]}
                   onChange={() => toggleFeature(feature.id)}
-                  className="mt-0.5 h-4 w-4 cursor-pointer accent-primary"
+                  className="mt-0.5 h-4 w-4 cursor-pointer rounded accent-accent"
                 />
-                <span>{feature.label}</span>
+                <span className="group-hover:text-accent transition-colors">{feature.label}</span>
               </label>
             ))}
           </div>
@@ -325,39 +330,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </section>
 
       {/* Entities list */}
-      <section className="flex flex-col gap-2 border-t border-border pt-4">
-        <label className="section-label">Entities ({nodes.length})</label>
+      <section className="flex flex-col gap-3 border-t border-border pt-4">
+        <div className="flex items-center justify-between px-1">
+          <label className="section-label mb-0">Entities</label>
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+            {nodes.length}
+          </span>
+        </div>
 
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: 4 }}>
-            <span style={{ color: healthColor, fontWeight: 600 }}>{healthLabel}</span>
+        <div>
+          <div className="mb-2 flex items-center justify-between px-1 text-xs">
+            <span style={{ color: healthColor, fontWeight: 600 }} className="flex items-center gap-1">
+              {errorCount === 0 ? <Check size={14} /> : errorCount === 1 ? <AlertTriangle size={14} /> : <X size={14} />}
+              {errorCount === 0 ? 'No issues' : errorCount === 1 ? '1 issue' : `${errorCount} issues`}
+            </span>
+            <span className="text-muted">{healthPct}%</span>
           </div>
-          <div style={{ height: 4, borderRadius: 9999, background: 'var(--c-surface-3)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${healthPct}%`,
-              borderRadius: 9999,
-              background: healthColor,
-              transition: 'width 0.4s ease, background 0.4s ease'
-            }} />
+          <div className="h-1.5 rounded-full bg-surface-2 overflow-hidden">
+            <div 
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${healthPct}%`,
+                background: healthColor,
+              }} 
+            />
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           {nodes.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted">
-              No entities. Add one to start.
+            <div className="rounded-lg border border-dashed border-border bg-surface-2 p-4 text-center text-xs text-muted">
+              No entities yet. Add one to start building.
             </div>
           ) : (
             nodes.map((node) => (
               <div
                 key={node.id}
-                className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-sm"
+                className="flex items-center gap-2.5 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm transition-all hover:border-accent hover:bg-surface-hover"
               >
-                <Database size={12} className="text-primary" />
-                <span className="truncate">{node.data.name}</span>
-                <span className="ml-auto shrink-0 text-[0.65rem] text-muted">
-                  ({node.data.attributes.length} attrs)
+                <Database size={14} className="shrink-0 text-accent" />
+                <span className="min-w-0 flex-1 truncate font-medium text-content">{node.data.name}</span>
+                <span className="shrink-0 rounded bg-surface-3 px-1.5 py-0.5 text-[0.625rem] font-medium text-muted">
+                  {node.data.attributes.length}
                 </span>
               </div>
             ))
@@ -366,64 +380,66 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </section>
 
       {/* Cloud Save & Generate */}
-      <section className="mt-auto border-t border-border pt-3">
+      <section className="mt-auto flex flex-col gap-3 border-t border-border pt-4">
         {user ? (
-          <div className="mb-3 flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <button
               onClick={handleCloudSaveClick}
               disabled={isManualSaving}
-              className="btn btn-secondary w-full justify-center !py-2 !text-xs font-semibold"
+              className="btn btn-secondary w-full justify-center font-medium"
             >
               {currentProjectId ? (
                 <>
-                  <Save size={14} className="text-primary" />
-                  <span>{isManualSaving ? 'Saving...' : '💾 Save'}</span>
+                  <Save size={16} />
+                  <span>{isManualSaving ? 'Saving...' : 'Save Project'}</span>
                 </>
               ) : (
                 <>
-                  <Cloud size={14} className="text-primary" />
-                  <span>☁ Save to Cloud</span>
+                  <Cloud size={16} />
+                  <span>Save to Cloud</span>
                 </>
               )}
             </button>
 
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center px-2">
               {currentProjectId ? (
                 isCloudSaved ? (
-                  <span className="text-[0.7rem] font-medium text-green-400">
-                    ☁ Saved{lastCloudSaveTime ? ` · ${timeAgo(lastCloudSaveTime)}` : ''}
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-success">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success"></span>
+                    Saved{lastCloudSaveTime ? ` · ${timeAgo(lastCloudSaveTime)}` : ''}
                   </span>
                 ) : (
-                  <span className="animate-pulse text-[0.7rem] font-medium text-amber-400">
-                    ☁ Unsaved changes
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-warning animate-pulse">
+                    <span className="h-1.5 w-1.5 rounded-full bg-warning"></span>
+                    Unsaved changes
                   </span>
                 )
               ) : (
-                <span className="text-[0.7rem] text-subtle">☁ Not saved to cloud</span>
+                <span className="text-xs text-subtle">Not saved to cloud</span>
               )}
             </div>
           </div>
         ) : (
-          <div className="mb-3 flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <button
               onClick={() => {
                 showToast('Please sign in to save your project to the cloud.', 'info');
                 useAuthStore.getState().setIsAuthModalOpen(true);
               }}
-              className="btn btn-secondary w-full justify-center !py-2 !text-xs font-semibold text-muted hover:text-content"
+              className="btn btn-secondary w-full justify-center font-medium"
               title="Sign in to save project to cloud"
             >
-              <Cloud size={14} className="text-muted" />
-              <span>☁ Save to Cloud</span>
+              <Cloud size={16} />
+              <span>Save to Cloud</span>
             </button>
-            <div className="flex items-center justify-center">
-              <span className="text-[0.7rem] text-muted">☁ Sign in to enable cloud save</span>
+            <div className="flex items-center justify-center px-2">
+              <span className="text-xs text-subtle">Sign in to enable cloud save</span>
             </div>
           </div>
         )}
 
         <button
-          className={`btn btn-primary w-full py-3 ${shaking ? 'animate-shake' : ''}`}
+          className={`btn btn-accent w-full py-3 font-semibold shadow-md ${shaking ? 'animate-shake' : ''}`}
           onClick={handleGenerateClick}
           disabled={isGenerating || nodes.length === 0}
           title={
@@ -433,7 +449,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }
         >
           <Download size={18} />
-          {isGenerating ? 'Generating...' : 'Generate Backend Scaffold'}
+          {isGenerating ? 'Generating...' : 'Generate Code'}
         </button>
       </section>
 

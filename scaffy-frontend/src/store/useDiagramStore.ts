@@ -191,11 +191,11 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
-    dagreGraph.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 100 });
+    dagreGraph.setGraph({ rankdir: 'LR', nodesep: 120, ranksep: 150 });
 
     nodes.forEach((node) => {
       const height = 100 + (node.data.attributes ? node.data.attributes.length : 1) * 35;
-      dagreGraph.setNode(node.id, { width: 320, height });
+      dagreGraph.setNode(node.id, { width: 360, height });
     });
 
     edges.forEach((edge) => {
@@ -210,7 +210,7 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       return {
         ...node,
         position: {
-          x: nodeWithPosition.x - 160,
+          x: nodeWithPosition.x - 180,
           y: nodeWithPosition.y - height / 2
         }
       };
@@ -258,7 +258,8 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
         id: `edge_imported_${index}_${Date.now()}`,
         source: sourceId,
         target: targetId,
-        animated: true,
+        type: 'relationship', // Use custom edge type
+        animated: false,
         data: {
           type: rel.type,
           fromField: rel.fromField,
@@ -268,7 +269,6 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
           cascade: rel.cascade || ['PERSIST', 'MERGE'],
           joinTable: rel.joinTable || null
         },
-        label: rel.type,
         style: { strokeWidth: 2 }
       };
     });
@@ -493,9 +493,9 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
       const newEdge: Edge = {
         ...connection,
         id: `edge_${Date.now()}`,
-        animated: true,
+        type: 'relationship', // Use custom edge type
+        animated: false,
         data: defaultRelationConfig,
-        label: 'ONE_TO_MANY',
         style: { strokeWidth: 2 }
       };
 
@@ -527,7 +527,6 @@ export const useDiagramStore = create<DiagramState>((set, get) => ({
 
           return {
             ...edge,
-            label: config.type || edge.label,
             data: updatedData
           };
         }

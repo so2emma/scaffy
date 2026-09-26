@@ -57,9 +57,22 @@ function ScaffyAppContent() {
   const [isProjectsPanelOpen, setIsProjectsPanelOpen] = useState(false);
   const [isUserTemplatesPanelOpen, setIsUserTemplatesPanelOpen] = useState(false);
 
+  // Code Preview Drawer state
+  const [isCodePreviewOpen, setIsCodePreviewOpen] = useState(false);
+
   useEffect(() => {
     useAuthStore.getState().checkAuth();
   }, []);
+
+  // Sync theme with HTML element for proper CSS variable application
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === 'dark') {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  }, [theme]);
 
   const selectedNode = nodes.find((n) => n.selected);
   const selectedEntityName = selectedNode ? selectedNode.data.name : null;
@@ -224,9 +237,11 @@ function ScaffyAppContent() {
             <Canvas
               onOpenImport={() => setIsImportOpen(true)}
               onOpenTemplates={() => setIsTemplateGalleryOpen(true)}
+              onToggleCodePreview={() => setIsCodePreviewOpen(!isCodePreviewOpen)}
+              isCodePreviewOpen={isCodePreviewOpen}
             />
           </ReactFlowProvider>
-          <CodePreviewDrawer selectedEntityName={selectedEntityName} />
+          {isCodePreviewOpen && <CodePreviewDrawer selectedEntityName={selectedEntityName} />}
         </div>
 
         <ImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />

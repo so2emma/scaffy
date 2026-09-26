@@ -11,10 +11,12 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
-  Undo2, Redo2, Sparkles, Upload, Image as ImageIcon, FileText, Loader2, LayoutTemplate,
+  Undo2, Redo2, Sparkles, Upload, Image as ImageIcon, FileText, Loader2, LayoutTemplate, Code,
 } from 'lucide-react';
 import { useDiagramStore } from '../store/useDiagramStore';
 import { EntityNode } from './EntityNode';
+import { RelationshipEdge, SmoothStepEdge } from './RelationshipEdge';
+import { ERDDetailsPanel } from './ERDDetailsPanel';
 import { toPng } from 'html-to-image';
 import { useToast } from '../hooks/useToast';
 import jsPDF from 'jspdf';
@@ -23,9 +25,16 @@ const nodeTypes = {
   entityNode: EntityNode,
 };
 
+const edgeTypes = {
+  relationship: RelationshipEdge,
+  smoothstep: SmoothStepEdge,
+};
+
 interface CanvasProps {
   onOpenImport: () => void;
   onOpenTemplates: () => void;
+  onToggleCodePreview: () => void;
+  isCodePreviewOpen: boolean;
 }
 
 const ToolbarButton: React.FC<{
@@ -38,13 +47,13 @@ const ToolbarButton: React.FC<{
     onClick={onClick}
     disabled={disabled}
     title={title}
-    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-content transition-colors enabled:hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-subtle"
+    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-content transition-all duration-150 enabled:hover:bg-surface-hover enabled:hover:text-accent disabled:cursor-not-allowed disabled:text-subtle disabled:opacity-60"
   >
     {children}
   </button>
 );
 
-export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates }) => {
+export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates, onToggleCodePreview, isCodePreviewOpen }) => {
   const nodes = useDiagramStore((state) => state.nodes);
   const edges = useDiagramStore((state) => state.edges);
   const onNodesChange = useDiagramStore((state) => state.onNodesChange);
@@ -63,6 +72,8 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
 
   const { getNodes } = useReactFlow();
   const [isExporting, setIsExporting] = useState(false);
+  const [edgeType, setEdgeType] = useState<'relationship' | 'smoothstep'>('relationship');
+  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const { showToast } = useToast();
 
   const downloadImage = (dataUrl: string, filename: string) => {
@@ -88,7 +99,7 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
       if (!viewportNode) throw new Error('Viewport not found');
 
       const dataUrl = await toPng(viewportNode, {
-        backgroundColor: theme === 'dark' ? '#0a0a0b' : '#f6f7f9',
+        backgroundColor: theme === 'dark' ? '#1e1e1e' : '#f5f5f5',
         width: imageWidth,
         height: imageHeight,
         style: {
@@ -138,12 +149,12 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
   const handleEdgeClick = (_: React.MouseEvent, edge: any) => setSelectedEdgeId(edge.id);
   const handlePaneClick = () => setSelectedEdgeId(null);
 
-  const divider = <div className="mx-0.5 my-1 w-px bg-border" />;
+  const divider = <div className="mx-1 my-1.5 h-5 w-px bg-border" />;
 
   return (
     <div className="relative h-full w-full bg-canvas">
       {/* Floating Toolbar */}
-      <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-1 rounded-xl border border-border bg-surface/90 p-1 shadow-lg backdrop-blur">
+      <div className="absolute left-4 top-4 z-10 flex flex-wrap items-center gap-0.5 rounded-lg border border-border bg-surface/95 p-0.5 shadow-lg backdrop-blur-sm">
         <ToolbarButton onClick={() => undo()} disabled={past.length === 0} title="Undo (Ctrl+Z)">
           <Undo2 size={16} />
         </ToolbarButton>
@@ -152,21 +163,29 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
         </ToolbarButton>
         {divider}
         <ToolbarButton onClick={() => autoLayout()} title="Auto-arrange entity nodes">
-          <Sparkles size={14} className="text-muted" />
-          <span className="hidden sm:inline">Auto Layout</span>
+          <Sparkles size={16} />
+          <span className="hidden sm:inline">Layout</span>
         </ToolbarButton>
         {divider}
         <ToolbarButton onClick={onOpenImport} title="Import schema from DDL or backend folder">
-          <Upload size={14} className="text-muted" />
-          <span className="hidden sm:inline">Import / Scan</span>
+          <Upload size={16} />
+          <span className="hidden sm:inline">Import</span>
+        </ToolbarButton>
+        {divider}
+        <ToolbarButton 
+          onClick={onToggleCodePreview} 
+          title={isCodePreviewOpen ? "Hide Code Preview" : "Show Code Preview"}
+        >
+          <Code size={16} />
+          <span className="hidden sm:inline">{isCodePreviewOpen ? 'Hide' : 'Show'} Preview</span>
         </ToolbarButton>
         {divider}
         <ToolbarButton onClick={() => handleExport('png')} disabled={isExporting} title="Download Diagram as PNG">
-          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} className="text-muted" />}
+          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
           <span className="hidden sm:inline">PNG</span>
         </ToolbarButton>
         <ToolbarButton onClick={() => handleExport('pdf')} disabled={isExporting} title="Download Diagram as PDF">
-          {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} className="text-muted" />}
+          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
           <span className="hidden sm:inline">PDF</span>
         </ToolbarButton>
       </div>
@@ -178,10 +197,18 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={{
+          type: edgeType,
+          animated: false,
+          style: { strokeWidth: 2 },
+        }}
         onEdgeClick={handleEdgeClick}
         onPaneClick={handlePaneClick}
         onNodeDragStart={() => takeSnapshot()}
         fitView
+        elevateEdgesOnSelect={true}
+        connectionLineStyle={{ stroke: 'var(--c-accent)', strokeWidth: 2 }}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--dot-grid)" />
         <Controls showInteractive={false} />
@@ -195,17 +222,19 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
 
         {nodes.length === 0 && (
           <div className="pointer-events-none absolute left-1/2 top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2 text-center">
-            <div className="pointer-events-auto rounded-2xl border border-border bg-surface px-10 py-8 shadow-xl">
-              <div className="mb-4 flex justify-center">
-                <LayoutTemplate size={48} className="text-subtle opacity-60" />
+            <div className="pointer-events-auto rounded-xl border border-border bg-surface px-12 py-10 shadow-xl">
+              <div className="mb-5 flex justify-center">
+                <div className="rounded-lg bg-surface-2 p-4">
+                  <LayoutTemplate size={40} className="text-accent" />
+                </div>
               </div>
-              <h3 className="mb-2 text-lg font-semibold text-content">
-                Start from scratch or choose a template
+              <h3 className="mb-2 text-xl font-semibold text-content">
+                Start Building Your Schema
               </h3>
-              <p className="mb-5 text-sm text-muted">
-                Get started quickly with pre-built entity patterns
+              <p className="mb-6 max-w-sm text-sm text-muted">
+                Create entities from scratch or choose a pre-built template to get started quickly
               </p>
-              <button className="btn btn-primary mx-auto px-5 py-2.5" onClick={onOpenTemplates}>
+              <button className="btn btn-accent shadow-md" onClick={onOpenTemplates}>
                 <LayoutTemplate size={18} />
                 Browse Templates
               </button>
@@ -213,6 +242,12 @@ export const Canvas: React.FC<CanvasProps> = ({ onOpenImport, onOpenTemplates })
           </div>
         )}
       </ReactFlow>
+
+      {/* ERD Details Panel */}
+      <ERDDetailsPanel 
+        isOpen={isDetailsPanelOpen} 
+        onToggle={() => setIsDetailsPanelOpen(!isDetailsPanelOpen)} 
+      />
     </div>
   );
 };

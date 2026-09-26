@@ -250,15 +250,15 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
 
       {/* Main Slide-over Panel */}
       <div
-        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl transition-transform duration-300 ${
+        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-accent/30 bg-surface shadow-2xl transition-transform duration-300 ${
           animating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header Row */}
-        <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <LayoutTemplate size={20} className="text-primary" />
-            <h2 className="font-display text-base font-semibold text-content">Templates</h2>
+        <div className="flex items-center justify-between border-b border-border bg-surface-2 p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <LayoutTemplate size={22} className="text-accent" />
+            <h2 className="font-display text-lg font-semibold tracking-tight text-content">Templates</h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -274,16 +274,16 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                   setTmplIsPublic(false);
                   setIsSaveModalOpen(true);
                 }}
-                className="btn btn-primary !py-1.5 !text-xs"
+                className="btn btn-accent !py-2 !px-4 !text-sm shadow-md transition-all duration-200 hover:shadow-lg"
               >
-                <Plus size={14} />
+                <Plus size={15} />
                 <span>Save as Template</span>
               </button>
             )}
 
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-2 hover:text-content"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted shadow-sm transition-all duration-200 hover:bg-surface-2 hover:text-accent hover:scale-105"
             >
               <X size={18} />
             </button>
@@ -291,23 +291,23 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border bg-surface-2 px-4 py-2">
+        <div className="flex gap-2 border-b border-border bg-surface-2 px-4 py-3">
           <button
             onClick={() => setActiveTab('mine')}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold shadow-sm transition-all duration-200 ${
               activeTab === 'mine'
-                ? 'bg-surface text-content shadow-sm'
-                : 'text-muted hover:text-content'
+                ? 'bg-accent text-white scale-105'
+                : 'text-muted hover:bg-surface-3 hover:text-content'
             }`}
           >
             My Templates
           </button>
           <button
             onClick={() => setActiveTab('community')}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold shadow-sm transition-all duration-200 ${
               activeTab === 'community'
-                ? 'bg-surface text-content shadow-sm'
-                : 'text-muted hover:text-content'
+                ? 'bg-accent text-white scale-105'
+                : 'text-muted hover:bg-surface-3 hover:text-content'
             }`}
           >
             🌍 Community
@@ -317,14 +317,14 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
         {/* Template Grid */}
         <div className="scroll-thin flex-1 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-xs text-muted">
-              <Loader2 size={24} className="animate-spin text-primary" />
-              <span className="mt-2">Loading templates...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted">
+              <Loader2 size={28} className="animate-spin text-accent" />
+              <span className="font-medium">Loading templates...</span>
             </div>
           ) : templates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-xs text-muted">
-              <Package size={40} className="text-subtle opacity-30" />
-              <span>
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center text-sm text-muted">
+              <Package size={48} className="text-subtle opacity-30" />
+              <span className="font-medium">
                 {activeTab === 'mine'
                   ? 'You haven\'t saved any custom templates yet.'
                   : 'No community templates published yet.'}
@@ -339,26 +339,26 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                 return (
                   <div
                     key={tmpl.id}
-                    className="group relative flex flex-col rounded-xl border border-border bg-surface p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                    className="card card-hover group relative flex flex-col rounded-xl border border-border bg-surface p-5 shadow-md transition-all duration-200 hover:shadow-lg"
                   >
                     {/* Top row */}
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-3">
                         <span
-                          className="flex h-9 w-9 items-center justify-center rounded-lg"
+                          className="flex h-11 w-11 items-center justify-center rounded-xl shadow-sm transition-transform duration-200 group-hover:scale-110"
                           style={{
                             background: `color-mix(in srgb, ${catColor} 15%, transparent)`,
                             color: catColor,
                           }}
                         >
-                          <IconComp size={18} />
+                          <IconComp size={20} />
                         </span>
                         <div>
-                          <h3 className="font-display text-sm font-semibold text-content">
+                          <h3 className="font-display text-base font-semibold tracking-tight text-content transition-colors duration-200 group-hover:text-accent">
                             {tmpl.name}
                           </h3>
                           <span
-                            className="rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wider"
+                            className="mt-1 inline-block rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider shadow-sm"
                             style={{
                               background: `color-mix(in srgb, ${catColor} 12%, transparent)`,
                               color: catColor,
@@ -377,28 +377,28 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                               e.stopPropagation();
                               setOpenMenuId(openMenuId === tmpl.id ? null : tmpl.id);
                             }}
-                            className="p-1 text-muted transition-colors hover:text-content"
+                            className="rounded-lg p-1.5 text-muted transition-all duration-200 hover:bg-surface-2 hover:text-accent"
                           >
-                            <MoreVertical size={16} />
+                            <MoreVertical size={17} />
                           </button>
 
                           {openMenuId === tmpl.id && (
-                            <div className="absolute right-0 top-6 z-30 w-40 rounded-xl border border-border bg-surface p-1 shadow-xl">
+                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-border bg-surface p-1.5 shadow-xl">
                               <button
                                 type="button"
                                 onClick={() => handleTogglePublic(tmpl)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-content hover:bg-surface-2"
+                                className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-content transition-all duration-200"
                               >
-                                <Globe size={14} />
+                                <Globe size={15} />
                                 <span>{tmpl.isPublic ? 'Make Private' : 'Make Public'}</span>
                               </button>
-                              <div className="my-1 border-t border-border" />
+                              <div className="my-1.5 border-t border-border" />
                               <button
                                 type="button"
                                 onClick={() => handleDeleteTemplate(tmpl)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-red-500 hover:bg-red-500/10"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-500 transition-all duration-200 hover:bg-red-500/10"
                               >
-                                <Trash2 size={14} /> Delete
+                                <Trash2 size={15} /> Delete
                               </button>
                             </div>
                           )}
@@ -407,16 +407,16 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                     </div>
 
                     {tmpl.description && (
-                      <p className="mt-2 text-xs text-muted line-clamp-2">{tmpl.description}</p>
+                      <p className="mt-3 text-sm leading-relaxed text-muted line-clamp-2">{tmpl.description}</p>
                     )}
 
                     {/* Footer */}
-                    <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                      <div className="flex items-center gap-2 text-[0.7rem] text-muted">
-                        <span>{tmpl.entityCount} entities</span>
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                      <div className="flex items-center gap-2.5 text-[0.75rem] text-muted">
+                        <span className="font-medium">{tmpl.entityCount} entities</span>
                         {tmpl.isPublic && (
-                          <span className="flex items-center gap-1 text-primary">
-                            <Globe size={11} /> Public
+                          <span className="flex items-center gap-1 text-accent">
+                            <Globe size={12} /> Public
                           </span>
                         )}
                       </div>
@@ -424,7 +424,7 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                       <button
                         type="button"
                         onClick={() => handleUseTemplate(tmpl)}
-                        className="btn btn-primary !py-1 !px-3 !text-xs"
+                        className="btn btn-accent !py-1.5 !px-4 !text-sm shadow-sm transition-all duration-200 hover:shadow-md"
                       >
                         Use Template
                       </button>
@@ -440,14 +440,14 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
       {/* Save Template Dialog */}
       {isSaveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
-            <h3 className="font-display text-base font-semibold text-content">Save as Template</h3>
-            <form onSubmit={handleSaveAsTemplateSubmit} className="mt-4 flex flex-col gap-3">
+          <div className="card w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-semibold tracking-tight text-content">Save as Template</h3>
+            <form onSubmit={handleSaveAsTemplateSubmit} className="mt-5 flex flex-col gap-4">
               <div>
-                <label className="field-label">Template Name</label>
+                <label className="field-label mb-2 text-sm font-semibold">Template Name</label>
                 <input
                   type="text"
-                  className="input mt-1"
+                  className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                   value={tmplName}
                   onChange={(e) => setTmplName(e.target.value)}
                   required
@@ -455,9 +455,9 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
               </div>
 
               <div>
-                <label className="field-label">Description</label>
+                <label className="field-label mb-2 text-sm font-semibold">Description</label>
                 <textarea
-                  className="input mt-1 min-h-[60px]"
+                  className="input min-h-[70px] transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                   value={tmplDesc}
                   onChange={(e) => setTmplDesc(e.target.value)}
                   placeholder="Describe your template structure..."
@@ -466,9 +466,9 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="field-label">Category</label>
+                  <label className="field-label mb-2 text-sm font-semibold">Category</label>
                   <select
-                    className="input mt-1"
+                    className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                     value={tmplCategory}
                     onChange={(e) => setTmplCategory(e.target.value)}
                   >
@@ -481,9 +481,9 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                 </div>
 
                 <div>
-                  <label className="field-label">Icon</label>
+                  <label className="field-label mb-2 text-sm font-semibold">Icon</label>
                   <select
-                    className="input mt-1"
+                    className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                     value={tmplIcon}
                     onChange={(e) => setTmplIcon(e.target.value)}
                   >
@@ -496,28 +496,28 @@ export const UserTemplatesPanel: React.FC<UserTemplatesPanelProps> = ({ isOpen, 
                 </div>
               </div>
 
-              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-medium text-content">
+              <label className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-lg p-2 text-sm font-medium text-content transition-all duration-200 hover:bg-surface-2">
                 <input
                   type="checkbox"
                   checked={tmplIsPublic}
                   onChange={(e) => setTmplIsPublic(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-primary"
+                  className="h-4 w-4 cursor-pointer rounded border-border accent-accent transition-transform duration-200 hover:scale-110"
                 />
                 <span>Publish to Community (visible to everyone)</span>
               </label>
 
-              <div className="mt-3 flex justify-end gap-2">
+              <div className="mt-3 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsSaveModalOpen(false)}
-                  className="btn btn-secondary !py-1.5 !text-xs"
+                  className="btn btn-secondary !py-2 !px-4 !text-sm shadow-sm transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="btn btn-primary !py-1.5 !text-xs"
+                  className="btn btn-accent !py-2 !px-4 !text-sm shadow-md transition-all duration-200 hover:shadow-lg"
                 >
                   {isSubmitting ? 'Saving...' : 'Save Template'}
                 </button>

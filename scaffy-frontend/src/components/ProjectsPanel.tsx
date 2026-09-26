@@ -419,15 +419,15 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
 
       {/* Main Slide-over Panel */}
       <div
-        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl transition-transform duration-300 ${
+        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-accent/30 bg-surface shadow-2xl transition-transform duration-300 ${
           animating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header Row */}
-        <div className="flex items-center justify-between border-b border-border p-4 sm:p-5">
-          <div className="flex items-center gap-2">
-            <FolderKanban size={20} className="text-primary" />
-            <h2 className="font-display text-base font-semibold text-content">My Projects</h2>
+        <div className="flex items-center justify-between border-b border-border bg-surface-2 p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <FolderKanban size={22} className="text-accent" />
+            <h2 className="font-display text-lg font-semibold tracking-tight text-content">My Projects</h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -436,29 +436,29 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
               <button
                 type="button"
                 onClick={() => setIsSaveDropdownOpen(!isSaveDropdownOpen)}
-                className="btn btn-primary !py-1.5 !text-xs"
+                className="btn btn-accent !py-2 !px-4 !text-sm shadow-md transition-all duration-200 hover:shadow-lg"
               >
-                <Save size={14} />
+                <Save size={15} />
                 <span>Save Current</span>
-                <ChevronDown size={12} />
+                <ChevronDown size={13} />
               </button>
 
               {isSaveDropdownOpen && (
-                <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-border bg-surface p-1 shadow-xl">
+                <div className="absolute right-0 top-11 z-20 w-48 rounded-xl border border-border bg-surface p-1.5 shadow-xl">
                   <button
                     type="button"
                     onClick={() => handleSaveCurrent(false)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-content hover:bg-surface-2"
+                    className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-content transition-all duration-200"
                   >
-                    <Save size={14} className="text-primary" />
+                    <Save size={15} className="text-accent" />
                     <span>Save {currentProjectId ? '' : '(As New)'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSaveCurrent(true)}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-content hover:bg-surface-2"
+                    className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-content transition-all duration-200"
                   >
-                    <Plus size={14} className="text-primary" />
+                    <Plus size={15} className="text-accent" />
                     <span>Save as New...</span>
                   </button>
                 </div>
@@ -467,7 +467,7 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
 
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-2 hover:text-content"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted shadow-sm transition-all duration-200 hover:bg-surface-2 hover:text-accent hover:scale-105"
             >
               <X size={18} />
             </button>
@@ -475,15 +475,15 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex border-b border-border bg-surface-2 px-4 py-2">
+        <div className="flex gap-2 border-b border-border bg-surface-2 px-4 py-3">
           {(['all', 'favorites', 'recent'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition-all ${
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold capitalize shadow-sm transition-all duration-200 ${
                 activeTab === tab
-                  ? 'bg-surface text-content shadow-sm'
-                  : 'text-muted hover:text-content'
+                  ? 'bg-accent text-white scale-105'
+                  : 'text-muted hover:bg-surface-3 hover:text-content'
               }`}
             >
               {tab === 'favorites' ? '⭐ Favorites' : tab === 'recent' ? '🕐 Recent' : 'All'}
@@ -492,28 +492,28 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
         </div>
 
         {/* Search Bar */}
-        <div className="relative p-4 pb-2">
-          <Search size={15} className="pointer-events-none absolute left-7 top-6 text-subtle" />
+        <div className="relative p-4 pb-3">
+          <Search size={16} className="pointer-events-none absolute left-7 top-7 text-subtle" />
           <input
             type="text"
             placeholder="Search projects..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input !pl-9 !text-xs"
+            className="input !pl-10 !text-sm shadow-sm transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
 
         {/* Project List */}
         <div className="scroll-thin flex-1 overflow-y-auto p-4 pt-2">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-xs text-muted">
-              <Loader2 size={24} className="animate-spin text-primary" />
-              <span className="mt-2">Loading projects...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted">
+              <Loader2 size={28} className="animate-spin text-accent" />
+              <span className="font-medium">Loading projects...</span>
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-xs text-muted">
-              <Folder size={40} className="text-subtle opacity-30" />
-              <span>
+            <div className="flex flex-col items-center justify-center gap-4 py-16 text-center text-sm text-muted">
+              <Folder size={48} className="text-subtle opacity-30" />
+              <span className="font-medium">
                 {search
                   ? `No projects found for "${search}"`
                   : activeTab === 'favorites'
@@ -532,18 +532,18 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
                 return (
                   <div
                     key={proj.id}
-                    className={`group relative flex flex-col rounded-xl border p-4 transition-all hover:border-primary/50 hover:shadow-md ${
+                    className={`card card-hover group relative flex flex-col rounded-xl border p-5 shadow-md transition-all duration-200 hover:shadow-lg ${
                       currentProjectId === proj.id
-                        ? 'border-primary bg-primary/5'
+                        ? 'border-accent bg-accent/5 ring-2 ring-accent/20'
                         : 'border-border bg-surface'
                     }`}
                   >
                     {/* Card Top Row */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
                         {fw && (
                           <span
-                            className="rounded-md px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wider"
+                            className="rounded-lg px-2.5 py-1 text-[0.7rem] font-bold uppercase tracking-wider shadow-sm"
                             style={{
                               background: `color-mix(in srgb, ${fwColor} 15%, transparent)`,
                               color: fwColor,
@@ -553,22 +553,22 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
                           </span>
                         )}
                         {currentProjectId === proj.id && (
-                          <span className="rounded-md bg-primary/20 px-2 py-0.5 text-[0.65rem] font-bold text-primary">
+                          <span className="rounded-lg bg-accent/20 px-2.5 py-1 text-[0.7rem] font-bold text-accent shadow-sm">
                             Active
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={(e) => handleToggleFavorite(e, proj)}
-                          className={`p-1 text-muted transition-colors hover:text-amber-400 ${
+                          className={`rounded-lg p-1.5 text-muted transition-all duration-200 hover:scale-110 hover:text-amber-400 ${
                             proj.isFavorited ? 'text-amber-400' : ''
                           }`}
                           title="Toggle favorite"
                         >
-                          <Star size={16} fill={proj.isFavorited ? 'currentColor' : 'none'} />
+                          <Star size={17} fill={proj.isFavorited ? 'currentColor' : 'none'} />
                         </button>
 
                         <div className="relative">
@@ -578,22 +578,22 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
                               e.stopPropagation();
                               setOpenMenuId(openMenuId === proj.id ? null : proj.id);
                             }}
-                            className="p-1 text-muted transition-colors hover:text-content"
+                            className="rounded-lg p-1.5 text-muted transition-all duration-200 hover:bg-surface-2 hover:text-accent"
                           >
-                            <MoreVertical size={16} />
+                            <MoreVertical size={17} />
                           </button>
 
                           {openMenuId === proj.id && (
-                            <div className="absolute right-0 top-6 z-30 w-40 rounded-xl border border-border bg-surface p-1 shadow-xl">
+                            <div className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-border bg-surface p-1.5 shadow-xl">
                               <button
                                 type="button"
                                 onClick={() => {
                                   setOpenMenuId(null);
                                   handleOpenProject(proj);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-content hover:bg-surface-2"
+                                className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-content transition-all duration-200"
                               >
-                                <Folder size={14} className="text-primary" /> Open
+                                <Folder size={15} className="text-accent" /> Open
                               </button>
                               <button
                                 type="button"
@@ -602,31 +602,31 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
                                   setRenamingProject(proj);
                                   setRenameValue(proj.name);
                                 }}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-content hover:bg-surface-2"
+                                className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-content transition-all duration-200"
                               >
-                                <Edit2 size={14} /> Rename
+                                <Edit2 size={15} /> Rename
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleDuplicateProject(proj)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-content hover:bg-surface-2"
+                                className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-content transition-all duration-200"
                               >
-                                <Copy size={14} /> Duplicate
+                                <Copy size={15} /> Duplicate
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleOpenVersions(proj)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-content hover:bg-surface-2"
+                                className="card card-hover flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-content transition-all duration-200"
                               >
-                                <RotateCcw size={14} /> Version History
+                                <RotateCcw size={15} /> Version History
                               </button>
-                              <div className="my-1 border-t border-border" />
+                              <div className="my-1.5 border-t border-border" />
                               <button
                                 type="button"
                                 onClick={() => handleDeleteProject(proj)}
-                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-red-500 hover:bg-red-500/10"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-500 transition-all duration-200 hover:bg-red-500/10"
                               >
-                                <Trash2 size={14} /> Delete
+                                <Trash2 size={15} /> Delete
                               </button>
                             </div>
                           )}
@@ -636,22 +636,22 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
 
                     {/* Content */}
                     <div
-                      className="mt-2 cursor-pointer"
+                      className="mt-3 cursor-pointer"
                       onClick={() => handleOpenProject(proj)}
                     >
-                      <h3 className="font-display text-sm font-semibold text-content group-hover:text-primary">
+                      <h3 className="font-display text-base font-semibold tracking-tight text-content transition-colors duration-200 group-hover:text-accent">
                         {proj.name}
                       </h3>
                       {proj.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted">
+                        <p className="mt-1 line-clamp-2 text-sm text-muted">
                           {proj.description}
                         </p>
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-3 flex items-center justify-between text-[0.7rem] text-muted">
-                      <span>{proj.entityCount} entities</span>
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-[0.75rem] text-muted">
+                      <span className="font-medium">{proj.entityCount} entities</span>
                       <span>Opened {timeAgo(proj.lastAccessedAt || proj.updatedAt)}</span>
                     </div>
                   </div>
@@ -664,56 +664,56 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
 
       {/* Version History Sub-Panel */}
       {versionHistoryProject && (
-        <div className="absolute inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-surface shadow-2xl animate-in slide-in-from-right duration-200">
-          <div className="flex items-center justify-between border-b border-border p-4">
-            <div className="flex items-center gap-2">
-              <RotateCcw size={18} className="text-primary" />
+        <div className="absolute inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-accent/30 bg-surface shadow-2xl animate-in slide-in-from-right duration-200">
+          <div className="flex items-center justify-between border-b border-border bg-surface-2 p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <RotateCcw size={20} className="text-accent" />
               <div>
-                <h3 className="font-display text-sm font-semibold text-content">Version History</h3>
-                <p className="text-[0.7rem] text-muted">{versionHistoryProject.name}</p>
+                <h3 className="font-display text-base font-semibold text-content">Version History</h3>
+                <p className="text-[0.75rem] text-muted">{versionHistoryProject.name}</p>
               </div>
             </div>
             <button
               onClick={() => setVersionHistoryProject(null)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-2 hover:text-content"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted shadow-sm transition-all duration-200 hover:bg-surface-2 hover:text-accent hover:scale-105"
             >
-              <X size={16} />
+              <X size={17} />
             </button>
           </div>
 
           <div className="scroll-thin flex-1 overflow-y-auto p-4">
             {isLoadingVersions ? (
-              <div className="flex flex-col items-center justify-center py-16 text-xs text-muted">
-                <Loader2 size={24} className="animate-spin text-primary" />
-                <span className="mt-2">Loading versions...</span>
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted">
+                <Loader2 size={28} className="animate-spin text-accent" />
+                <span className="font-medium">Loading versions...</span>
               </div>
             ) : versions.length === 0 ? (
-              <div className="py-12 text-center text-xs text-muted">No version history found.</div>
+              <div className="py-12 text-center text-sm text-muted">No version history found.</div>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-3">
                 {versions.map((ver) => (
                   <div
                     key={ver.id}
-                    className="flex items-center justify-between rounded-xl border border-border bg-surface-2 p-3 text-xs"
+                    className="card card-hover flex items-center justify-between rounded-xl border border-border bg-surface-2 p-4 text-sm shadow-sm transition-all duration-200"
                   >
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2.5">
                         <span className="font-semibold text-content">v{ver.versionNumber}</span>
                         {ver.note && (
-                          <span className="rounded bg-surface px-1.5 py-0.5 text-[0.65rem] text-muted">
+                          <span className="rounded-lg bg-accent/10 px-2 py-0.5 text-[0.7rem] font-medium text-accent">
                             {ver.note}
                           </span>
                         )}
                       </div>
-                      <span className="text-[0.68rem] text-subtle">{timeAgo(ver.createdAt)}</span>
+                      <span className="text-[0.75rem] text-subtle">{timeAgo(ver.createdAt)}</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleRestoreVersion(ver)}
-                      className="btn btn-secondary !px-2.5 !py-1 !text-xs"
+                      className="btn btn-accent !px-3 !py-1.5 !text-sm shadow-sm transition-all duration-200 hover:shadow-md"
                     >
-                      <RotateCcw size={12} /> Restore
+                      <RotateCcw size={13} /> Restore
                     </button>
                   </div>
                 ))}
@@ -726,14 +726,14 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
       {/* Name Project Dialog (Save As New) */}
       {isNameModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl">
-            <h3 className="font-display text-base font-semibold text-content">Name your project</h3>
-            <form onSubmit={handleCreateNewProjectSubmit} className="mt-4 flex flex-col gap-3">
+          <div className="card w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-semibold tracking-tight text-content">Name your project</h3>
+            <form onSubmit={handleCreateNewProjectSubmit} className="mt-5 flex flex-col gap-4">
               <div>
-                <label className="field-label">Project Name</label>
+                <label className="field-label mb-2 text-sm font-semibold">Project Name</label>
                 <input
                   type="text"
-                  className="input mt-1"
+                  className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder="My E-Commerce Service"
@@ -743,28 +743,28 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
               </div>
 
               <div>
-                <label className="field-label">Description (optional)</label>
+                <label className="field-label mb-2 text-sm font-semibold">Description (optional)</label>
                 <input
                   type="text"
-                  className="input mt-1"
+                  className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                   value={newProjectDesc}
                   onChange={(e) => setNewProjectDesc(e.target.value)}
                   placeholder="Microservice architecture"
                 />
               </div>
 
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-3 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsNameModalOpen(false)}
-                  className="btn btn-secondary !py-1.5 !text-xs"
+                  className="btn btn-secondary !py-2 !px-4 !text-sm shadow-sm transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingSave}
-                  className="btn btn-primary !py-1.5 !text-xs"
+                  className="btn btn-accent !py-2 !px-4 !text-sm shadow-md transition-all duration-200 hover:shadow-lg"
                 >
                   {isSubmittingSave ? 'Saving...' : 'Save Project'}
                 </button>
@@ -777,26 +777,26 @@ export const ProjectsPanel: React.FC<ProjectsPanelProps> = ({ isOpen, onClose })
       {/* Rename Project Dialog */}
       {renamingProject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl">
-            <h3 className="font-display text-base font-semibold text-content">Rename Project</h3>
-            <form onSubmit={handleRenameProjectSubmit} className="mt-4 flex flex-col gap-3">
+          <div className="card w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-semibold tracking-tight text-content">Rename Project</h3>
+            <form onSubmit={handleRenameProjectSubmit} className="mt-5 flex flex-col gap-4">
               <input
                 type="text"
-                className="input"
+                className="input transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
                 autoFocus
                 required
               />
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-2 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setRenamingProject(null)}
-                  className="btn btn-secondary !py-1.5 !text-xs"
+                  className="btn btn-secondary !py-2 !px-4 !text-sm shadow-sm transition-all duration-200"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary !py-1.5 !text-xs">
+                <button type="submit" className="btn btn-accent !py-2 !px-4 !text-sm shadow-md transition-all duration-200 hover:shadow-lg">
                   Rename
                 </button>
               </div>

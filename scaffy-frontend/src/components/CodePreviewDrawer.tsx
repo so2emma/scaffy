@@ -6,6 +6,7 @@ import {
   Terminal, RefreshCw, AlertTriangle, ChevronDown, ChevronUp,
   ChevronRight, FileCode, FileText, Database, TestTube, Copy, Check, Box,
   Search, GitCompare, Download, SlidersHorizontal, Layers, X, FileArchive,
+  Cloud, Save, BarChart3,
 } from 'lucide-react';
 
 interface CodePreviewDrawerProps {
@@ -69,13 +70,13 @@ const FRAMEWORK_OPTIONS = [
 ];
 
 const CATEGORY_ORDER = [
-  '📦 Application Layer',
-  '🔌 API Layer',
-  '⚙️ Business Logic',
-  '📋 Data Transfer',
-  '🗄️ Database',
-  '🧪 Tests',
-  '⚡ Infrastructure',
+  'Application Layer',
+  'API Layer',
+  'Business Logic',
+  'Data Transfer',
+  'Database',
+  'Tests',
+  'Infrastructure',
 ];
 
 function sortTreeNodes(nodes: TreeNode[]): TreeNode[] {
@@ -172,7 +173,7 @@ function getCategoryFromPath(filePath: string): string {
   const lower = filePath.toLowerCase();
   const filename = (filePath.split('/').pop() ?? '').toLowerCase();
 
-  // 🧪 Tests
+  // Tests
   if (
     lower.includes('/test') ||
     lower.includes('/spec') ||
@@ -181,10 +182,10 @@ function getCategoryFromPath(filePath: string): string {
     lower.endsWith('_test.go') ||
     lower.includes('rspec')
   ) {
-    return '🧪 Tests';
+    return 'Tests';
   }
 
-  // 📋 Data Transfer
+  // Data Transfer
   if (
     lower.includes('/dto') ||
     lower.includes('requestdto') ||
@@ -201,10 +202,10 @@ function getCategoryFromPath(filePath: string): string {
     filename.includes('serializer') ||
     filename.includes('resource')
   ) {
-    return '📋 Data Transfer';
+    return 'Data Transfer';
   }
 
-  // 🔌 API Layer
+  // API Layer
   if (
     lower.includes('/controller') ||
     lower.includes('controller.') ||
@@ -217,10 +218,10 @@ function getCategoryFromPath(filePath: string): string {
     lower.includes('/urls') ||
     lower.includes('urls.')
   ) {
-    return '🔌 API Layer';
+    return 'API Layer';
   }
 
-  // ⚙️ Business Logic
+  // Business Logic
   if (
     lower.includes('/service') ||
     lower.includes('service.') ||
@@ -231,10 +232,10 @@ function getCategoryFromPath(filePath: string): string {
     lower.includes('/crud') ||
     lower.includes('crud.')
   ) {
-    return '⚙️ Business Logic';
+    return 'Business Logic';
   }
 
-  // 📦 Application Layer
+  // Application Layer
   if (
     lower.includes('/entity/') ||
     lower.includes('/entities/') ||
@@ -246,10 +247,10 @@ function getCategoryFromPath(filePath: string): string {
     lower.endsWith('schema.prisma') ||
     filename.startsWith('model')
   ) {
-    return '📦 Application Layer';
+    return 'Application Layer';
   }
 
-  // 🗄️ Database
+  // Database
   if (
     lower.includes('/migration') ||
     lower.includes('/db/') ||
@@ -260,11 +261,32 @@ function getCategoryFromPath(filePath: string): string {
     lower.includes('database.py') ||
     lower.includes('database.go')
   ) {
-    return '🗄️ Database';
+    return 'Database';
   }
 
-  // ⚡ Infrastructure
-  return '⚡ Infrastructure';
+  // Infrastructure
+  return 'Infrastructure';
+}
+
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case 'Application Layer':
+      return <Box size={14} />;
+    case 'API Layer':
+      return <Cloud size={14} />;
+    case 'Business Logic':
+      return <Save size={14} />;
+    case 'Data Transfer':
+      return <BarChart3 size={14} />;
+    case 'Database':
+      return <Database size={14} />;
+    case 'Tests':
+      return <TestTube size={14} />;
+    case 'Infrastructure':
+      return <AlertTriangle size={14} />;
+    default:
+      return <FileCode size={14} />;
+  }
 }
 
 function getEquivalentFilePath(activePath: string, compareFilesMap: Record<string, string>): string {
@@ -482,7 +504,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
     }
   }, [compareMode, compareFramework, fetchComparePreview]);
 
-  // When an entity is selected on canvas: DEFAULT TO ENTITY VIEW TAB automatically!
+  // When an entity is selected on canvas: Switch to entity view tab automatically
   useEffect(() => {
     if (!selectedEntityName || Object.keys(allFiles).length === 0) return;
 
@@ -495,7 +517,6 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
     if (firstEntityFile) {
       setActiveFilePath(firstEntityFile);
-      setIsMinimized(false);
       setTimeout(() => {
         const el = document.querySelector(`[data-filepath="${CSS.escape(firstEntityFile)}"]`);
         el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -789,16 +810,16 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
   return (
     <div
-      className="relative z-[6] flex shrink-0 flex-col overflow-hidden border-t border-border bg-surface"
+      className="relative z-[6] flex shrink-0 flex-col overflow-hidden border-t border-accent/20 bg-surface shadow-2xl"
       style={{
         height: isMinimized ? '40px' : `${drawerHeight}px`,
-        transition: isResizingV || isResizingH ? 'none' : 'height 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: isResizingV || isResizingH ? 'none' : 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {/* Vertical Resize Handle */}
       {!isMinimized && (
         <div
-          className="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize transition-colors hover:bg-primary/40"
+          className="absolute inset-x-0 top-0 z-10 h-1 cursor-ns-resize transition-all duration-200 hover:bg-accent/50"
           onMouseDown={(e) => {
             e.preventDefault();
             setIsResizingV(true);
@@ -807,27 +828,27 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
       )}
 
       {/* Title Bar & IDE Toolbar */}
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border px-3 bg-surface">
+      <div className="flex h-10 shrink-0 items-center justify-between border-b border-border bg-surface-2 px-4 shadow-sm">
         {/* Left Group */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
-            className="flex h-6 w-6 items-center justify-center rounded text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted transition-all duration-200 hover:bg-surface-3 hover:text-accent hover:scale-105"
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? 'Expand Preview' : 'Collapse Preview'}
           >
             {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          <Terminal size={13} className="text-muted" />
-          <span className="text-[0.78rem] text-muted">
+          <Terminal size={14} className="text-accent" />
+          <span className="text-[0.8rem] font-medium text-muted">
             Preview — <strong className="font-semibold text-content">{projectName || 'Project'}</strong>
           </span>
-          <span className={`rounded px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide ${badgeClass}`}>
+          <span className={`rounded-lg px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide shadow-sm ${badgeClass}`}>
             {frameworkLabel}
           </span>
-          <span className="text-[0.68rem] text-subtle font-mono">{totalFileCount} files</span>
+          <span className="rounded bg-surface-3 px-2 py-0.5 font-mono text-[0.7rem] text-accent">{totalFileCount} files</span>
           {selectedEntityName && (
             <span
-              className="rounded px-1.5 py-0.5 text-[0.65rem] font-semibold transition-colors"
+              className="card card-hover rounded-lg px-2 py-1 text-[0.7rem] font-semibold shadow-sm transition-all duration-200"
               style={{
                 color: frameworkColor,
                 backgroundColor: `color-mix(in srgb, ${frameworkColor} 14%, transparent)`,
@@ -837,24 +858,24 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
             </span>
           )}
           {compareMode && (
-            <span className="text-[0.68rem] font-medium text-subtle">
+            <span className="text-[0.7rem] font-medium text-muted">
               vs{' '}
-              <span className="rounded bg-surface-3 px-1.5 py-0.5 text-[0.65rem] font-semibold text-content">
+              <span className="card rounded-lg bg-surface-3 px-2 py-0.5 text-[0.65rem] font-bold text-accent">
                 {FRAMEWORK_OPTIONS.find((f) => f.id === compareFramework)?.label}
               </span>
             </span>
           )}
-          {(isLoading || isCompareFetching) && <RefreshCw size={11} className="animate-spin text-muted" />}
+          {(isLoading || isCompareFetching) && <RefreshCw size={12} className="animate-spin text-accent" />}
         </div>
 
         {/* Right Group: Toolbar Icon Buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* Search Toggle */}
           <button
-            className={`flex h-7 w-7 items-center justify-center rounded-md text-xs transition-colors ${
+            className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs shadow-sm transition-all duration-200 ${
               isSearchOpen || searchQuery
-                ? 'bg-primary/10 text-primary'
-                : 'text-subtle hover:bg-surface-2 hover:text-content'
+                ? 'bg-accent/15 text-accent scale-105'
+                : 'text-subtle hover:bg-surface-3 hover:text-accent hover:scale-105'
             }`}
             onClick={() => {
               setIsMinimized(false);
@@ -868,8 +889,8 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
           {/* Variables Panel Toggle */}
           <button
-            className={`flex h-7 w-7 items-center justify-center rounded-md text-xs transition-colors ${
-              isVariablesOpen ? 'bg-primary/10 text-primary' : 'text-subtle hover:bg-surface-2 hover:text-content'
+            className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs shadow-sm transition-all duration-200 ${
+              isVariablesOpen ? 'bg-accent/15 text-accent scale-105' : 'text-subtle hover:bg-surface-3 hover:text-accent hover:scale-105'
             }`}
             onClick={() => {
               setIsMinimized(false);
@@ -882,8 +903,8 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
           {/* Framework Compare Toggle */}
           <button
-            className={`flex h-7 w-7 items-center justify-center rounded-md text-xs transition-colors ${
-              compareMode ? 'bg-primary/10 text-primary' : 'text-subtle hover:bg-surface-2 hover:text-content'
+            className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs shadow-sm transition-all duration-200 ${
+              compareMode ? 'bg-accent/15 text-accent scale-105' : 'text-subtle hover:bg-surface-3 hover:text-accent hover:scale-105'
             }`}
             onClick={() => {
               setIsMinimized(false);
@@ -896,8 +917,8 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
           {/* Diff Mode Toggle */}
           <button
-            className={`flex h-7 w-7 items-center justify-center rounded-md text-xs transition-colors ${
-              isDiffMode ? 'bg-primary/10 text-primary' : 'text-subtle hover:bg-surface-2 hover:text-content'
+            className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs shadow-sm transition-all duration-200 ${
+              isDiffMode ? 'bg-accent/15 text-accent scale-105' : 'text-subtle hover:bg-surface-3 hover:text-accent hover:scale-105'
             }`}
             onClick={() => {
               setIsMinimized(false);
@@ -916,7 +937,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
           {/* Download File */}
           <button
-            className="flex h-7 w-7 items-center justify-center rounded-md text-subtle transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-subtle shadow-sm transition-all duration-200 hover:bg-surface-3 hover:text-accent hover:scale-105"
             onClick={handleDownloadFile}
             title="Download Active File (Ctrl+S)"
           >
@@ -925,7 +946,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
           {/* Download All as ZIP */}
           <button
-            className="flex h-7 w-7 items-center justify-center rounded-md text-subtle transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-subtle shadow-sm transition-all duration-200 hover:bg-surface-3 hover:text-accent hover:scale-105"
             onClick={handleDownloadZip}
             disabled={isDownloadingZip}
             title="Download Full Project as ZIP"
@@ -933,11 +954,11 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
             {isDownloadingZip ? <RefreshCw size={13} className="animate-spin" /> : <FileArchive size={13} />}
           </button>
 
-          <div className="mx-1 h-4 w-[1px] bg-border" />
+          <div className="mx-1.5 h-5 w-[1px] bg-accent/20" />
 
           {/* Height Presets Dropdown */}
           <select
-            className="h-6 rounded border border-border bg-surface-2 px-1.5 text-[0.68rem] text-muted outline-none transition-colors hover:text-content"
+            className="h-7 rounded-lg border border-border bg-surface-3 px-2 text-[0.7rem] font-medium text-muted shadow-sm outline-none transition-all duration-200 hover:border-accent/50 hover:text-accent focus:border-accent"
             value={drawerHeight}
             onChange={(e) => {
               const val = Number(e.target.value);
@@ -978,25 +999,25 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
               >
                 {/* Search Input */}
                 {(isSearchOpen || searchQuery) && (
-                  <div className="shrink-0 border-b border-border p-2">
+                  <div className="shrink-0 border-b border-border bg-surface-2 p-2.5">
                     <div className="relative flex items-center">
-                      <Search size={12} className="absolute left-2 text-subtle" />
+                      <Search size={13} className="absolute left-3 text-subtle" />
                       <input
                         ref={searchInputRef}
                         type="text"
                         placeholder="Search files..."
-                        className="w-full rounded border border-border bg-surface py-1 pl-7 pr-12 text-xs text-content placeholder-subtle outline-none focus:border-primary"
+                        className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-12 text-xs text-content placeholder-subtle shadow-sm outline-none transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       {searchResults.length > 0 && (
-                        <span className="absolute right-2 text-[0.6rem] font-semibold text-primary">
-                          {searchResults.length} {searchResults.length === 1 ? 'match' : 'matches'}
+                        <span className="absolute right-8 rounded bg-accent/15 px-1.5 py-0.5 text-[0.65rem] font-bold text-accent">
+                          {searchResults.length}
                         </span>
                       )}
                       {searchQuery && (
                         <button
-                          className="absolute right-1 text-subtle hover:text-content"
+                          className="absolute right-2 rounded p-1 text-subtle transition-all duration-200 hover:bg-surface-3 hover:text-accent"
                           onClick={() => setSearchQuery('')}
                         >
                           <X size={12} />
@@ -1008,11 +1029,11 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
                 {/* Explorer View Tabs: 'All Files' (Full Directory Tree) vs Entity Specific View */}
                 {!searchQuery && (
-                  <div className="flex shrink-0 items-center gap-1 border-b border-border p-1.5 scroll-thin">
+                  <div className="flex shrink-0 items-center gap-1.5 border-b border-border bg-surface-2 p-2 scroll-thin">
                     <button
-                      className={`rounded px-2.5 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                      className={`rounded-lg px-3 py-1.5 text-[0.7rem] font-semibold transition-all duration-200 ${
                         activeExplorerTab === 'all'
-                          ? 'bg-primary/20 text-primary font-semibold'
+                          ? 'bg-accent/20 text-accent shadow-sm scale-105'
                           : 'text-subtle hover:bg-surface-3 hover:text-content'
                       }`}
                       onClick={() => setActiveExplorerTab('all')}
@@ -1020,9 +1041,9 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
                       All Files
                     </button>
                     <button
-                      className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-[0.7rem] font-semibold transition-all duration-200 ${
                         activeExplorerTab === 'entity'
-                          ? 'bg-primary/20 text-primary font-semibold'
+                          ? 'bg-accent/20 text-accent shadow-sm scale-105'
                           : 'text-subtle hover:bg-surface-3 hover:text-content'
                       }`}
                       onClick={() => setActiveExplorerTab('entity')}
@@ -1030,7 +1051,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
                       {selectedEntityName ? (
                         <>
                           <span
-                            className="h-1.5 w-1.5 rounded-full"
+                            className="h-2 w-2 rounded-full shadow-sm"
                             style={{ backgroundColor: frameworkColor }}
                           />
                           <span>{selectedEntityName}</span>
@@ -1134,7 +1155,10 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
                           <div key={group.category} className="flex flex-col gap-0.5">
                             {/* Category Group Header */}
                             <div className="flex items-center justify-between border-b border-border/60 bg-surface-2/60 px-2 py-1 text-[0.68rem] font-bold text-muted rounded-t">
-                              <span>{group.category}</span>
+                              <span className="flex items-center gap-1.5">
+                                {getCategoryIcon(group.category)}
+                                {group.category}
+                              </span>
                               <span className="font-mono text-[0.6rem] text-subtle">{group.files.length}</span>
                             </div>
 
@@ -1186,8 +1210,8 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
               {/* Editor Workspace */}
               <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
                 {/* Tab Bar */}
-                <div className="flex h-[34px] shrink-0 items-center gap-2 border-b border-border bg-surface-2 px-2">
-                  <div className="flex h-full items-center gap-1.5 border-b-2 border-primary px-3 text-[0.72rem] font-medium text-content">
+                <div className="flex h-[36px] shrink-0 items-center gap-2 border-b border-border bg-surface-2 px-3 shadow-sm">
+                  <div className="card card-hover flex h-full items-center gap-2 border-b-2 border-accent px-4 text-[0.75rem] font-semibold text-content transition-all duration-200">
                     {getFileIcon(activeFileName)}
                     <span>{activeFileName}</span>
                   </div>
@@ -1195,24 +1219,24 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
 
                   {/* Copy Button */}
                   <button
-                    className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-[0.7rem] font-semibold shadow-sm transition-all duration-200 ${
                       copied
-                        ? 'border-primary/40 text-primary'
-                        : 'border-border text-subtle hover:border-border-strong hover:text-content'
+                        ? 'border-accent/50 bg-accent/10 text-accent scale-105'
+                        : 'border-border text-subtle hover:border-accent/50 hover:bg-surface-3 hover:text-accent'
                     }`}
                     onClick={handleCopy}
                     title="Copy to clipboard"
                   >
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
                     <span>{copied ? 'Copied!' : 'Copy'}</span>
                   </button>
 
                   {/* Toolbar Diff Toggle Button */}
                   <button
-                    className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[0.65rem] font-medium transition-colors ${
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 text-[0.7rem] font-semibold shadow-sm transition-all duration-200 ${
                       isDiffMode
-                        ? 'border-primary/40 bg-primary/10 text-primary'
-                        : 'border-border text-subtle hover:text-content'
+                        ? 'border-accent/50 bg-accent/15 text-accent scale-105'
+                        : 'border-border text-subtle hover:border-accent/50 hover:bg-surface-3 hover:text-accent'
                     }`}
                     onClick={() => {
                       if (isDiffMode) {
@@ -1225,7 +1249,7 @@ export const CodePreviewDrawer: React.FC<CodePreviewDrawerProps> = ({ selectedEn
                     }}
                     title="Compare with snapshot (Ctrl+D)"
                   >
-                    <GitCompare size={12} />
+                    <GitCompare size={13} />
                     <span>{isDiffMode ? 'Exit Diff' : 'Diff'}</span>
                   </button>
                 </div>

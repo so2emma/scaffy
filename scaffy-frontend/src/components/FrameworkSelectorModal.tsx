@@ -113,14 +113,16 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
       onClick={handleBackdropClick}
     >
       <div
-        className={`flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all duration-200 ${
+        className={`card card-hover flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${
           animating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
-        <div className="flex items-center justify-between px-6 pt-5">
-          <h2 className="font-display text-lg font-semibold">Select Framework</h2>
+        <div className="flex items-center justify-between border-b border-border px-6 py-5">
+          <h2 className="font-display text-lg font-semibold">
+            Select <span className="text-accent">Framework</span>
+          </h2>
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-all duration-200 hover:border-accent hover:bg-accent/10 hover:text-accent"
             onClick={onClose}
             aria-label="Close"
           >
@@ -155,7 +157,7 @@ export const FrameworkSelectorModal: React.FC<FrameworkSelectorModalProps> = ({
                     return (
                       <button
                         key={fw.id}
-                        className="group relative flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                        className="group relative flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                         onClick={() => handleSelect(fw.id)}
                         style={{
                           borderColor: isActive ? fw.color : 'var(--c-border)',

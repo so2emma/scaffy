@@ -183,18 +183,20 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
       onClick={handleBackdropClick}
     >
       <div
-        className={`flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl transition-all duration-200 ${
+        className={`card card-hover flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${
           animating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5">
+        <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <div className="flex items-center gap-2.5">
-            <LayoutTemplate size={22} className="text-primary" />
-            <h2 className="font-display text-lg font-semibold">Diagram Templates</h2>
+            <LayoutTemplate size={22} className="text-accent transition-transform duration-300 hover:scale-110" />
+            <h2 className="font-display text-lg font-semibold">
+              Diagram <span className="text-accent">Templates</span>
+            </h2>
           </div>
           <button
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-all duration-200 hover:border-accent hover:bg-accent/10 hover:text-accent"
             onClick={onClose}
             aria-label="Close"
           >
@@ -203,11 +205,11 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
         </div>
 
         {/* Tabs & Search */}
-        <div className="flex flex-col gap-3 px-6 pt-4">
+        <div className="flex flex-col gap-3 border-b border-border px-6 py-4">
           <div className="flex w-full rounded-xl bg-surface-2 p-1">
             <button
               onClick={() => setActiveTab('builtin')}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all duration-200 ${
                 activeTab === 'builtin'
                   ? 'bg-surface text-content shadow-sm'
                   : 'text-muted hover:text-content'
@@ -217,7 +219,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
             </button>
             <button
               onClick={() => setActiveTab('community')}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all duration-200 ${
                 activeTab === 'community'
                   ? 'bg-surface text-content shadow-sm'
                   : 'text-muted hover:text-content'
@@ -241,7 +243,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
         </div>
 
         {/* Content Grid */}
-        <div className="scroll-thin flex-1 overflow-y-auto px-6 py-4">
+        <div className="scroll-thin flex-1 overflow-y-auto px-6 py-5">
           {currentLoading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-sm text-muted">
               <Package size={48} className="text-subtle opacity-30 animate-pulse" />
@@ -263,13 +265,12 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
                   return (
                     <button
                       key={`${template.id}-${index}`}
-                      className="group relative flex h-56 flex-col overflow-hidden rounded-2xl border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                      className="card card-hover group relative flex h-56 flex-col overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                       onClick={() => handleSelectBuiltIn(template.id, template.name)}
                       disabled={isLoadingTemplate}
-                      style={{ borderColor: 'var(--c-border)' }}
                     >
                       <span
-                        className="absolute inset-x-0 top-0 h-1 opacity-0 transition-opacity group-hover:opacity-100"
+                        className="absolute inset-x-0 top-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                         style={{ background: categoryColor }}
                       />
 
@@ -307,7 +308,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
                           </span>
                         </div>
                         {isLoadingTemplate && (
-                          <div className="flex items-center gap-1.5 text-xs text-primary">
+                          <div className="flex items-center gap-1.5 text-xs text-accent">
                             <Loader2 size={13} className="animate-spin" />
                             <span>Loading...</span>
                           </div>
@@ -332,12 +333,11 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
                 return (
                   <button
                     key={template.id}
-                    className="group relative flex h-56 flex-col overflow-hidden rounded-2xl border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+                    className="card card-hover group relative flex h-56 flex-col overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
                     onClick={() => handleSelectCommunity(template)}
-                    style={{ borderColor: 'var(--c-border)' }}
                   >
                     <span
-                      className="absolute inset-x-0 top-0 h-1 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute inset-x-0 top-0 h-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                       style={{ background: categoryColor }}
                     />
 
@@ -376,7 +376,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({ isOp
                           {template.entityCount === 1 ? 'entity' : 'entities'}
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-primary">Use Template</span>
+                      <span className="text-xs font-semibold text-accent transition-colors duration-200 group-hover:scale-105">Use Template</span>
                     </div>
                   </button>
                 );

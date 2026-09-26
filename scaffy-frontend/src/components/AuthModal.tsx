@@ -129,13 +129,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
       }}
     >
       <div
-        className={`relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-2xl transition-all duration-200 ${
+        className={`card card-hover relative w-full max-w-md overflow-hidden rounded-2xl p-6 shadow-2xl transition-all duration-300 ${
           animating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         {/* Close Button */}
         <button
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:bg-surface-2 hover:text-content"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-all duration-200 hover:border-accent hover:bg-accent/10 hover:text-accent"
           onClick={onClose}
           aria-label="Close"
         >
@@ -144,7 +144,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
 
         {/* Brand Header */}
         <div className="flex flex-col items-center justify-center gap-2 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 text-accent transition-all duration-300 hover:scale-110">
             <Database size={26} />
           </span>
           <h2 className="font-display text-xl font-bold tracking-tight">Scaffy</h2>
@@ -155,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
         <div className="mt-6 flex rounded-xl bg-surface-2 p-1">
           <button
             type="button"
-            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all duration-200 ${
               activeTab === 'login'
                 ? 'bg-surface text-content shadow-sm'
                 : 'text-muted hover:text-content'
@@ -170,7 +170,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
           </button>
           <button
             type="button"
-            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all ${
+            className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-all duration-200 ${
               activeTab === 'register'
                 ? 'bg-surface text-content shadow-sm'
                 : 'text-muted hover:text-content'
@@ -243,7 +243,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
 
           <button
             type="submit"
-            className="btn btn-primary w-full py-2.5"
+            className="btn btn-accent w-full py-2.5 transition-all duration-200 hover:scale-[1.02]"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -270,7 +270,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultTa
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-muted hover:text-content hover:underline"
+            className="text-xs text-muted transition-colors duration-200 hover:text-accent hover:underline"
           >
             Continue as guest
           </button>

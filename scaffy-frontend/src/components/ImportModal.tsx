@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, Database, FolderOpen, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDiagramStore } from '../store/useDiagramStore';
 
@@ -17,7 +17,29 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const [visible, setVisible] = useState(false);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setVisible(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setAnimating(true));
+      });
+      setErrorMsg(null);
+    } else {
+      setAnimating(false);
+      const timer = setTimeout(() => {
+        setVisible(false);
+        setDdlText('');
+        setProjectPath('');
+        setErrorMsg(null);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!visible) return null;
 
   const handleDdlImport = async () => {
     if (!ddlText.trim()) {
@@ -81,25 +103,29 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
     reader.readAsText(file);
   };
 
-  const tabClass = (active: boolean) =>
-    `flex flex-1 items-center justify-center gap-2 border-b-2 py-3 text-sm transition-colors ${
-      active
-        ? 'border-primary font-semibold text-content'
-        : 'border-transparent font-medium text-muted hover:text-content'
-    }`;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+    <div 
+      className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-200 ${
+        animating ? 'bg-black/60 backdrop-blur-sm' : 'bg-black/0'
+      }`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className={`card card-hover flex w-full max-w-lg flex-col overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${
+        animating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      }`}>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <Upload size={18} className="text-muted" />
-            <span className="font-display text-lg font-semibold">Reverse Engineer / Import</span>
+            <Upload size={18} className="text-accent transition-transform duration-300 hover:scale-110" />
+            <span className="font-display text-lg font-semibold">
+              Reverse Engineer / <span className="text-accent">Import</span>
+            </span>
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1 text-muted transition-colors hover:bg-surface-2 hover:text-content"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted transition-all duration-200 hover:border-accent hover:bg-accent/10 hover:text-accent"
             aria-label="Close"
           >
             <X size={20} />
@@ -113,7 +139,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
               setActiveTab('ddl');
               setErrorMsg(null);
             }}
-            className={tabClass(activeTab === 'ddl')}
+            className={`flex flex-1 items-center justify-center gap-2 border-b-2 py-3 text-sm transition-all duration-200 ${
+              activeTab === 'ddl'
+                ? 'border-accent font-semibold text-content'
+                : 'border-transparent font-medium text-muted hover:text-content'
+            }`}
           >
             <Database size={14} />
             SQL DDL Schema
@@ -123,7 +153,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
               setActiveTab('springboot');
               setErrorMsg(null);
             }}
-            className={tabClass(activeTab === 'springboot')}
+            className={`flex flex-1 items-center justify-center gap-2 border-b-2 py-3 text-sm transition-all duration-200 ${
+              activeTab === 'springboot'
+                ? 'border-accent font-semibold text-content'
+                : 'border-transparent font-medium text-muted hover:text-content'
+            }`}
           >
             <FolderOpen size={14} />
             Spring Boot Repository
@@ -131,9 +165,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
         </div>
 
         {/* Body */}
-        <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-col gap-4 p-6">
           {errorMsg && (
-            <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2.5 text-xs text-danger">
+            <div className="flex items-start gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2.5 text-xs text-danger transition-all duration-200">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" />
               <div>{errorMsg}</div>
             </div>
@@ -145,7 +179,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 <span className="text-sm text-muted">
                   Paste SQL table declarations below or load a `.sql` file:
                 </span>
-                <label className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-content transition-colors hover:bg-surface-3">
+                <label className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-xs text-content transition-all duration-200 hover:border-accent hover:bg-accent/10 hover:text-accent">
                   <Upload size={12} />
                   Choose File
                   <input type="file" accept=".sql" onChange={handleFileUpload} className="hidden" />
@@ -158,7 +192,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
                 placeholder={
                   'CREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    email VARCHAR(255) NOT NULL UNIQUE\n);'
                 }
-                className="scroll-thin h-44 resize-none rounded-lg border border-border bg-surface-2 p-2.5 font-mono text-xs text-content outline-none focus:border-primary focus:ring-2 focus:ring-primary/25"
+                className="scroll-thin h-44 resize-none rounded-lg border border-border bg-surface-2 p-2.5 font-mono text-xs text-content outline-none transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/25"
               />
             </div>
           ) : (
@@ -184,11 +218,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose }) => 
 
         {/* Footer */}
         <div className="flex justify-end gap-3 border-t border-border bg-surface-2 px-5 py-3.5">
-          <button className="btn btn-secondary !px-3 !text-sm" onClick={onClose} disabled={isLoading}>
+          <button className="btn btn-secondary !px-3 !text-sm transition-all duration-200" onClick={onClose} disabled={isLoading}>
             Cancel
           </button>
           <button
-            className="btn btn-primary min-w-[6.25rem] !px-4 !text-sm"
+            className="btn btn-accent min-w-[6.25rem] !px-4 !text-sm transition-all duration-200 hover:scale-[1.02]"
             onClick={activeTab === 'ddl' ? handleDdlImport : handleSpringBootImport}
             disabled={isLoading}
           >
